@@ -1,0 +1,2392 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-900">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="CRM">
+    <link rel="apple-touch-icon" href="icon.png">
+    <title>CRM Agrícola</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (XLSX) CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .tooltip-box { display: none; }
+        .has-tooltip:hover .tooltip-box { display: block; }
+        #printRoot { display: none; }
+        @media print {
+            html, body { height: auto !important; overflow: visible !important; background: #fff !important; }
+            body.printing > *:not(#printRoot) { display: none !important; }
+            body.printing #printRoot { display: block !important; padding: 8px; }
+            @page { margin: 12mm; }
+        }
+        .watermark-bg {
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 280px auto;
+        }
+    </style>
+</head>
+<body class="h-full text-slate-800 bg-slate-900">
+
+    <!-- 🔒 SALA DE ESPERA / CONFIGURACIÓN DE PIN PRIVADO -->
+    <div id="pinLockScreen" class="fixed inset-0 bg-slate-950 z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 sm:p-8 shadow-2xl text-center space-y-6">
+            
+            <!-- LOGO BRANDING (SIN NOMBRE PÚBLICO DE EMPRESA) -->
+            <div class="flex flex-col items-center space-y-2">
+                <div class="w-16 h-16 rounded-2xl bg-emerald-600 flex items-center justify-center text-white font-extrabold text-2xl shadow-lg shadow-emerald-900/50 border border-emerald-500/30">
+                    <span data-emp-ini>CA</span>
+                </div>
+                <p id="pinInstructionTitle" class="text-xs text-emerald-400 font-semibold tracking-wider uppercase pt-2">Acceso Privado & Seguro</p>
+            </div>
+
+            <!-- DISPLAY PIN -->
+            <div class="space-y-3">
+                <p id="pinSubText" class="text-xs text-slate-400">Ingrese el PIN de seguridad</p>
+                <div class="flex justify-center">
+                    <input type="password" id="pinInputDisplay" maxlength="4" placeholder="••••" readonly class="w-40 text-center text-3xl font-extrabold tracking-widest bg-slate-950 border border-slate-700 text-emerald-400 py-2.5 rounded-xl outline-none focus:border-emerald-500">
+                </div>
+                <p id="pinErrorMsg" class="text-xs text-red-400 font-semibold hidden">¡PIN Incorrecto!</p>
+                <p id="pinSuccessMsg" class="text-xs text-emerald-400 font-semibold hidden">¡PIN Configurado Correctamente!</p>
+            </div>
+
+            <!-- TECLADO NUMÉRICO -->
+            <div class="grid grid-cols-3 gap-3 max-w-[240px] mx-auto">
+                <button onclick="appendPinNum('1')" class="h-12 bg-slate-800 hover:bg-slate-700 text-white font-bold text-lg rounded-xl border border-slate-700 active:bg-emerald-600 transition">1</button>
+                <button onclick="appendPinNum('2')" class="h-12 bg-slate-800 hover:bg-slate-700 text-white font-bold text-lg rounded-xl border border-slate-700 active:bg-emerald-600 transition">2</button>
+                <button onclick="appendPinNum('3')" class="h-12 bg-slate-800 hover:bg-slate-700 text-white font-bold text-lg rounded-xl border border-slate-700 active:bg-emerald-600 transition">3</button>
+                <button onclick="appendPinNum('4')" class="h-12 bg-slate-800 hover:bg-slate-700 text-white font-bold text-lg rounded-xl border border-slate-700 active:bg-emerald-600 transition">4</button>
+                <button onclick="appendPinNum('5')" class="h-12 bg-slate-800 hover:bg-slate-700 text-white font-bold text-lg rounded-xl border border-slate-700 active:bg-emerald-600 transition">5</button>
+                <button onclick="appendPinNum('6')" class="h-12 bg-slate-800 hover:bg-slate-700 text-white font-bold text-lg rounded-xl border border-slate-700 active:bg-emerald-600 transition">6</button>
+                <button onclick="appendPinNum('7')" class="h-12 bg-slate-800 hover:bg-slate-700 text-white font-bold text-lg rounded-xl border border-slate-700 active:bg-emerald-600 transition">7</button>
+                <button onclick="appendPinNum('8')" class="h-12 bg-slate-800 hover:bg-slate-700 text-white font-bold text-lg rounded-xl border border-slate-700 active:bg-emerald-600 transition">8</button>
+                <button onclick="appendPinNum('9')" class="h-12 bg-slate-800 hover:bg-slate-700 text-white font-bold text-lg rounded-xl border border-slate-700 active:bg-emerald-600 transition">9</button>
+                <button onclick="clearPinNum()" class="h-12 bg-slate-800 hover:bg-slate-700 text-red-400 font-bold text-xs rounded-xl border border-slate-700 active:bg-red-900 transition">BORRAR</button>
+                <button onclick="appendPinNum('0')" class="h-12 bg-slate-800 hover:bg-slate-700 text-white font-bold text-lg rounded-xl border border-slate-700 active:bg-emerald-600 transition">0</button>
+                <button onclick="submitPinCheck()" class="h-12 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl border border-emerald-500 active:bg-emerald-700 transition">ENTRAR</button>
+            </div>
+
+            <div class="pt-2 border-t border-slate-800 text-[10px] text-slate-500">
+                <span data-emp>CRM Agrícola</span> System • Acceso Protegido
+            </div>
+        </div>
+    </div>
+
+    <!-- 🟢 CONTENIDO PRINCIPAL CRM -->
+    <div id="appContainer" class="hidden h-full flex flex-col md:flex-row overflow-hidden bg-slate-50">
+
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="w-full md:w-64 bg-slate-900 text-slate-300 flex-shrink-0 flex flex-col justify-between z-30 transition-all duration-300">
+            <div>
+                <!-- BRAND HEADER -->
+                <div class="p-4 flex items-center justify-between border-b border-slate-800">
+                    <div class="flex items-center space-x-3">
+                        <div id="companyLogoContainer" class="w-11 h-11 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-extrabold text-xl shadow-lg shadow-emerald-900/40 overflow-hidden border border-emerald-500/30">
+                            <span id="defaultLogoIcon"><span data-emp-ini>CA</span></span>
+                            <img id="companyLogoImg" class="hidden w-full h-full object-cover" alt="Logo">
+                        </div>
+                        <div>
+                            <h1 class="font-extrabold text-white text-base leading-tight tracking-tight"><span data-emp>CRM Agrícola</span></h1>
+                            <p class="text-xs text-emerald-400 font-semibold tracking-wider uppercase">Servicios Agrícolas</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LOGO UPLOADER -->
+                <div class="px-4 py-2 border-b border-slate-800 bg-slate-950/40 flex items-center justify-between text-xs text-slate-400">
+                    <span class="font-medium">Logo Empresa</span>
+                    <label class="cursor-pointer text-emerald-400 hover:text-emerald-300 font-semibold flex items-center space-x-1">
+                        <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                        <span>Cargar Logo</span>
+                        <input type="file" id="logoInput" accept="image/*" class="hidden" onchange="handleLogoUpload(event)">
+                    </label>
+                </div>
+
+                <!-- NAVIGATION -->
+                <nav class="p-3 space-y-1 text-sm font-medium">
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg bg-emerald-600 text-white shadow-sm transition">
+                        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                        <span>Dashboard General</span>
+                    </button>
+                    <button onclick="switchTab('clientes')" id="nav-clientes" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition">
+                        <i data-lucide="users" class="w-5 h-5"></i>
+                        <span>Clientes & Cartera 360°</span>
+                    </button>
+                    <button onclick="switchTab('stock')" id="nav-stock" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition">
+                        <i data-lucide="package" class="w-5 h-5"></i>
+                        <span>Stock & Depósito</span>
+                    </button>
+                    <button onclick="switchTab('trabajos')" id="nav-trabajos" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition">
+                        <i data-lucide="tractor" class="w-5 h-5"></i>
+                        <span>Órdenes de Trabajo</span>
+                    </button>
+                    <button onclick="switchTab('facturacion')" id="nav-facturacion" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition">
+                        <i data-lucide="file-text" class="w-5 h-5"></i>
+                        <span>Facturación & Cobros</span>
+                    </button>
+                    <button onclick="switchTab('llamadas')" id="nav-llamadas" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition">
+                        <i data-lucide="phone-call" class="w-5 h-5"></i>
+                        <span>Bitácora Llamadas</span>
+                    </button>
+                </nav>
+            </div>
+
+            <div class="p-4 border-t border-slate-800 text-xs text-slate-500 flex items-center justify-between">
+                <span><span data-emp>CRM Agrícola</span> System</span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-950 text-emerald-400 border border-emerald-800">Online</span>
+            </div>
+        </aside>
+
+        <!-- MAIN AREA -->
+        <main class="flex-1 flex flex-col h-full bg-slate-50 overflow-hidden">
+            <header class="bg-white border-b border-slate-200 px-6 py-3.5 flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
+                <div class="flex items-center space-x-3">
+                    <h2 id="pageTitle" class="text-xl font-bold text-slate-800">Dashboard General</h2>
+                </div>
+                
+                <div class="flex flex-wrap items-center gap-2">
+                    <span id="dirtyBadge" class="hidden text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">Cambios sin guardar</span>
+                    <button id="monBtn" onclick="cambiarMoneda()" class="inline-flex items-center bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 px-3.5 py-2 rounded-lg text-sm font-semibold transition">Moneda: pesos (ARS)</button>
+                    <button onclick="editEmpresa()" class="inline-flex items-center bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 px-3.5 py-2 rounded-lg text-sm font-semibold transition">Empresa</button>
+                    <button onclick="document.getElementById('jsonFile').click()" class="inline-flex items-center bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 px-3.5 py-2 rounded-lg text-sm font-semibold transition">Cargar datos</button>
+                    <button onclick="guardarJSON()" class="inline-flex items-center bg-amber-500 hover:bg-amber-600 text-white px-3.5 py-2 rounded-lg text-sm font-semibold shadow-sm transition">Guardar cambios</button>
+                    <input type="file" id="jsonFile" accept=".json,application/json" class="hidden">
+                    <button onclick="openModal('modalImportExcel')" class="inline-flex items-center space-x-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 px-3.5 py-2 rounded-lg text-sm font-semibold transition">
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i>
+                        <span>Importar Excel</span>
+                    </button>
+                    <button onclick="openModal('modalTrabajo')" class="inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-lg text-sm font-semibold shadow-sm transition">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                        <span>Nueva Aplicación</span>
+                    </button>
+                    <button onclick="openModal('modalCliente')" class="inline-flex items-center space-x-2 bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2 rounded-lg text-sm font-semibold shadow-sm transition">
+                        <i data-lucide="user-plus" class="w-4 h-4"></i>
+                        <span>Nuevo Cliente</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar" id="contentArea">
+                <!-- TAB 1: DASHBOARD -->
+                <section id="tab-dashboard" class="tab-content space-y-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="relative bg-white rounded-xl p-5 border border-slate-200 shadow-sm has-tooltip cursor-pointer hover:border-emerald-300 transition">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Cuentas por Cobrar</p>
+                                    <h3 id="dashTotalDeuda" class="text-2xl font-extrabold text-slate-900 mt-1">$ 0</h3>
+                                    <p class="text-[11px] text-amber-600 mt-1 flex items-center font-medium">
+                                        <i data-lucide="info" class="w-3 h-3 mr-1"></i> Cursor para ver detalle
+                                    </p>
+                                </div>
+                                <div class="p-2.5 bg-amber-50 rounded-xl text-amber-600">
+                                    <i data-lucide="dollar-sign" class="w-5 h-5"></i>
+                                </div>
+                            </div>
+                            <div class="tooltip-box absolute z-50 top-full left-0 mt-2 w-80 bg-slate-900 text-white text-xs rounded-xl p-4 shadow-2xl border border-slate-700">
+                                <h4 class="font-bold border-b border-slate-700 pb-2 mb-2 text-emerald-400 flex justify-between">
+                                    <span>Cliente Con Deuda</span>
+                                    <span>Monto</span>
+                                </h4>
+                                <div id="tooltipDeudaDetalle" class="space-y-2 max-h-56 overflow-y-auto custom-scrollbar"></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Facturado</p>
+                                    <h3 id="dashTotalFacturado" class="text-2xl font-extrabold text-slate-900 mt-1">$ 0</h3>
+                                    <p class="text-[11px] text-emerald-600 mt-1 font-semibold" id="dashTotalCobradoSub">Cobrado: $ 0</p>
+                                </div>
+                                <div class="p-2.5 bg-emerald-50 rounded-xl text-emerald-600">
+                                    <i data-lucide="file-check" class="w-5 h-5"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Hectáreas Totales</p>
+                                    <h3 id="dashTotalHaMes" class="text-2xl font-extrabold text-slate-900 mt-1">0 Ha</h3>
+                                    <p class="text-[11px] text-slate-500 mt-1 font-medium" id="dashServicioPrincipal">Servicio Top: -</p>
+                                </div>
+                                <div class="p-2.5 bg-blue-50 rounded-xl text-blue-600">
+                                    <i data-lucide="map-pin" class="w-5 h-5"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Días Pago Promedio</p>
+                                    <h3 id="dashDiasPagoProm" class="text-2xl font-extrabold text-slate-900 mt-1">0 días</h3>
+                                    <p class="text-[11px] text-slate-500 mt-1 font-medium">Eficiencia de Cobro</p>
+                                </div>
+                                <div class="p-2.5 bg-purple-50 rounded-xl text-purple-600">
+                                    <i data-lucide="clock" class="w-5 h-5"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                            <div class="flex justify-between items-center mb-3 border-b pb-2 border-slate-100">
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-sm">Distribución de Hectáreas por Servicio</h3>
+                                    <p class="text-xs text-slate-500">Muestra visualmente el tipo de trabajo más contratado</p>
+                                </div>
+                                <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full"><span data-emp>CRM Agrícola</span> Stats</span>
+                            </div>
+                            <div class="relative h-64 flex items-center justify-center">
+                                <canvas id="chartServicios"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                            <div class="flex justify-between items-center mb-3 border-b pb-2 border-slate-100">
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-sm">Hectáreas Trabajadas por Cliente</h3>
+                                    <p class="text-xs text-slate-500">Ranking de clientes por volumen de hectáreas</p>
+                                </div>
+                                <span class="text-xs bg-slate-100 text-slate-700 font-bold px-2.5 py-0.5 rounded-full">Top Hectáreas</span>
+                            </div>
+                            <div class="relative h-64">
+                                <canvas id="chartClientesHa"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                            <div class="flex justify-between items-center mb-3 border-b pb-2 border-slate-100">
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-sm">Evolución de Facturación vs Cobranzas (<span data-mon>ARS</span>)</h3>
+                                    <p class="text-xs text-slate-500">Comparativa mensual de ingresos emitidos vs cobrados efectivamente</p>
+                                </div>
+                            </div>
+                            <div class="relative h-64">
+                                <canvas id="chartFacturacionEvolucion"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                            <div class="flex justify-between items-center mb-3 border-b pb-2 border-slate-100">
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-sm">Stock por Categoría</h3>
+                                    <p class="text-xs text-slate-500">Insumos en Depósito</p>
+                                </div>
+                            </div>
+                            <div class="relative h-64 flex items-center justify-center">
+                                <canvas id="chartInsumosCat"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-slate-800 flex items-center text-sm">
+                                <i data-lucide="alert-circle" class="w-4 h-4 mr-2 text-amber-500"></i>
+                                Alertas de Depósito & Stock Bajo de Clientes
+                            </h3>
+                            <button onclick="switchTab('stock')" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700">Ir a Depósito &rarr;</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="bg-slate-50 text-slate-500 uppercase border-y border-slate-100">
+                                        <th class="p-2.5">Cliente</th>
+                                        <th class="p-2.5">Producto</th>
+                                        <th class="p-2.5">Categoría</th>
+                                        <th class="p-2.5 text-right">Disponible</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashTableStock" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 2: CLIENTES -->
+                <section id="tab-clientes" class="tab-content hidden space-y-6">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div class="relative flex-1 w-full md:max-w-md">
+                            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+                            <input type="text" id="searchClienteInput" onkeyup="renderClientes()" placeholder="Buscar cliente por Razón Social, CUIT..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-2 max-h-[78vh] overflow-y-auto custom-scrollbar" id="clientesList"></div>
+                        <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-6 shadow-sm min-h-[78vh] relative overflow-hidden" id="clientePerfil360">
+                            <div class="text-center py-20 text-slate-400">
+                                <i data-lucide="user-check" class="w-12 h-12 mx-auto mb-3 text-slate-300"></i>
+                                <p class="font-medium">Selecciona un cliente de la lista para ver su Cartera 360° completa.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 3: STOCK -->
+                <section id="tab-stock" class="tab-content hidden space-y-6">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800">Depósito de Insumos de Clientes</h3>
+                            <p class="text-xs text-slate-500">Descuento automático en cada trabajo de <span data-emp>CRM Agrícola</span>.</p>
+                        </div>
+                        <button onclick="openModal('modalStock')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm">
+                            <i data-lucide="package-plus" class="w-4 h-4"></i>
+                            <span>Ingresar Insumos al Depósito</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                            <div class="relative w-full max-w-xs">
+                                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
+                                <input type="text" id="searchStockInput" onkeyup="renderStockTable()" placeholder="Filtrar por producto o cliente..." class="w-full pl-9 pr-3 py-1.5 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-100 text-slate-600 font-semibold uppercase text-xs tracking-wider">
+                                    <tr>
+                                        <th class="p-3.5">Cliente Propietario</th>
+                                        <th class="p-3.5">Nombre del Insumo</th>
+                                        <th class="p-3.5">Categoría</th>
+                                        <th class="p-3.5 text-right">Cantidad Stock</th>
+                                        <th class="p-3.5">Unidad</th>
+                                        <th class="p-3.5 text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="stockTableBody" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 4: TRABAJOS -->
+                <section id="tab-trabajos" class="tab-content hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800">Órdenes de Trabajo & Aplicaciones</h3>
+                            <p class="text-xs text-slate-500">Fumigaciones Aéreas, Terrestres, Siembra y Fertilización.</p>
+                        </div>
+                        <button onclick="openModal('modalTrabajo')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                            <span>Registrar Trabajo</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-100 text-slate-600 font-semibold uppercase text-xs tracking-wider">
+                                    <tr>
+                                        <th class="p-3.5">Fecha</th>
+                                        <th class="p-3.5">Cliente</th>
+                                        <th class="p-3.5">Servicio</th>
+                                        <th class="p-3.5">Campo / Lote</th>
+                                        <th class="p-3.5 text-right">Hectáreas</th>
+                                        <th class="p-3.5 text-right">Caudal Agua</th>
+                                        <th class="p-3.5 text-right">$/Ha (<span data-mon>ARS</span>)</th>
+                                        <th class="p-3.5 text-right">Total <span data-mon>ARS</span></th>
+                                        <th class="p-3.5 text-center">Insumos Aplicados</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="trabajosTableBody" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 5: FACTURACIÓN -->
+                <section id="tab-facturacion" class="tab-content hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800">Facturación & Control de Cobros</h3>
+                            <p class="text-xs text-slate-500">Gestión de facturas, presupuestos, remitos e imputación de cobros.</p>
+                        </div>
+                        <div class="space-x-2">
+                            <button onclick="openModal('modalPago')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-lg text-sm font-semibold inline-flex items-center space-x-2">
+                                <i data-lucide="credit-card" class="w-4 h-4"></i>
+                                <span>Registrar Cobro</span>
+                            </button>
+                            <button onclick="openModal('modalFactura')" class="bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2 rounded-lg text-sm font-semibold inline-flex items-center space-x-2">
+                                <i data-lucide="file-plus" class="w-4 h-4"></i>
+                                <span>Emitir Factura</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-100 text-slate-600 font-semibold uppercase text-xs tracking-wider">
+                                    <tr>
+                                        <th class="p-3.5">Fecha</th>
+                                        <th class="p-3.5">Comprobante</th>
+                                        <th class="p-3.5">Cliente</th>
+                                        <th class="p-3.5">CUIT / IVA</th>
+                                        <th class="p-3.5 text-right">Importe Total</th>
+                                        <th class="p-3.5 text-center">Estado Pago</th>
+                                        <th class="p-3.5">Método Pago</th>
+                                        <th class="p-3.5 text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="facturacionTableBody" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 6: LLAMADAS -->
+                <section id="tab-llamadas" class="tab-content hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800">Registro de Comunicaciones</h3>
+                            <p class="text-xs text-slate-500">Historial de llamadas e interacciones de <span data-emp>CRM Agrícola</span>.</p>
+                        </div>
+                        <button onclick="openModal('modalLlamada')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm">
+                            <i data-lucide="phone-outgoing" class="w-4 h-4"></i>
+                            <span>Registrar Comunicación</span>
+                        </button>
+                    </div>
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                        <div class="space-y-4" id="llamadasContainer"></div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL IMPORT EXCEL -->
+    <div id="modalImportExcel" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-2xl w-full p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="file-spreadsheet" class="w-6 h-6 text-emerald-600"></i>
+                    <h3 class="font-bold text-lg text-slate-800">Importación Masiva desde Excel (.xlsx / .csv)</h3>
+                </div>
+                <button onclick="closeModal('modalImportExcel')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x"></i></button>
+            </div>
+            <div class="space-y-4">
+                <p class="text-xs text-slate-600">Carga un archivo Excel con la información de tus clientes, productos de stock u órdenes de trabajo.</p>
+                <div class="p-3 bg-emerald-50 rounded-lg border border-emerald-200 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-emerald-900">¿No tienes la plantilla de formato?</p>
+                        <p class="text-[11px] text-emerald-700">Descarga un modelo Excel pre-estructurado.</p>
+                    </div>
+                    <button onclick="downloadExcelTemplate()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-md shadow-sm flex items-center space-x-1">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        <span>Plantilla de Ejemplo</span>
+                    </button>
+                </div>
+                <div class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-emerald-500 bg-slate-50 transition cursor-pointer">
+                    <i data-lucide="upload-cloud" class="w-10 h-10 text-slate-400 mx-auto mb-2"></i>
+                    <label class="cursor-pointer text-sm font-semibold text-slate-700">
+                        <span>Selecciona tu archivo Excel (.xlsx / .csv)</span>
+                        <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelImport(event)">
+                    </label>
+                </div>
+                <div id="excelPreviewContainer" class="hidden space-y-2">
+                    <h4 class="text-xs font-bold uppercase text-slate-600">Vista Previa</h4>
+                    <div class="border border-slate-200 rounded-lg max-h-48 overflow-y-auto overflow-x-auto text-xs">
+                        <table class="w-full text-left border-collapse">
+                            <thead id="excelPreviewHead" class="bg-slate-100 font-bold border-b"></thead>
+                            <tbody id="excelPreviewBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 pt-4 border-t">
+                    <button type="button" onclick="closeModal('modalImportExcel')" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-sm font-semibold">Cancelar</button>
+                    <button type="button" id="btnConfirmImport" onclick="confirmExcelImport()" disabled class="px-4 py-2 bg-slate-400 text-white rounded-lg text-sm font-semibold cursor-not-allowed">Confirmar e Importar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL NUEVO CLIENTE -->
+    <div id="modalCliente" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-xl w-full p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="font-bold text-lg text-slate-800">Registrar Cliente en <span data-emp>CRM Agrícola</span></h3>
+                <button onclick="closeModal('modalCliente')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x"></i></button>
+            </div>
+            <form id="formCliente" onsubmit="saveCliente(event)" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Razón Social / Nombre *</label>
+                        <input type="text" id="cliNombre" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">CUIT / Identificación Fiscal *</label>
+                        <input type="text" id="cliCuit" placeholder="30-71234567-8" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Condición IVA *</label>
+                        <select id="cliIva" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                            <option value="Responsable Inscripto">Responsable Inscripto</option>
+                            <option value="Monotributo">Monotributo</option>
+                            <option value="Exento">Exento</option>
+                            <option value="Consumidor Final">Consumidor Final</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Dirección Fiscal / Localidad</label>
+                        <input type="text" id="cliDireccion" placeholder="Pergamino, Buenos Aires" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                </div>
+                <div class="border-t pt-3">
+                    <h4 class="font-semibold text-xs uppercase text-slate-500 mb-2">Contacto Principal</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Nombre Contacto</label>
+                            <input type="text" id="cliContactoNombre" placeholder="Juan Pérez" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">WhatsApp / Tel</label>
+                            <input type="text" id="cliTel" placeholder="+5492477123456" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Correo Electrónico</label>
+                            <input type="email" id="cliEmail" placeholder="contacto@campo.com" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm">
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Establecimientos / Campos (Separados por coma)</label>
+                    <input type="text" id="cliCampos" placeholder="La Estancia, Don Tomás, El Ombú" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                </div>
+                <div class="flex justify-end space-x-3 pt-4 border-t">
+                    <button type="button" onclick="closeModal('modalCliente')" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-sm font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold">Guardar Cliente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL INGRESAR STOCK -->
+    <div id="modalStock" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="font-bold text-lg text-slate-800">Cargar Insumo en Depósito</h3>
+                <button onclick="closeModal('modalStock')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x"></i></button>
+            </div>
+            <form id="formStock" onsubmit="saveStockItem(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Cliente Propietario *</label>
+                    <select id="stockClienteId" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre Comercial del Producto *</label>
+                    <input type="text" id="stockNombre" placeholder="Glifosato 48%, Atrazina, Urea" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Categoría *</label>
+                        <select id="stockCategoria" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                            <option value="Herbicida">Herbicida</option>
+                            <option value="Fungicida">Fungicida</option>
+                            <option value="Insecticida">Insecticida</option>
+                            <option value="Fertilizante">Fertilizante</option>
+                            <option value="Semilla">Semilla</option>
+                            <option value="Coadyuvante">Coadyuvante</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad Inicial *</label>
+                        <input type="number" step="0.01" id="stockCantidad" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Unidad Medida *</label>
+                        <select id="stockUnidad" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                            <option value="Litros">Litros (L)</option>
+                            <option value="Kilos">Kilos (kg)</option>
+                            <option value="cm3">cm³</option>
+                            <option value="Bolsas">Bolsas</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 pt-4 border-t">
+                    <button type="button" onclick="closeModal('modalStock')" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-sm font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold">Guardar Insumo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL REGISTRAR TRABAJO -->
+    <div id="modalTrabajo" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-2xl w-full p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <div>
+                    <h3 class="font-bold text-lg text-slate-800">Orden de Aplicación - <span data-emp>CRM Agrícola</span></h3>
+                    <p class="text-xs text-emerald-600 font-medium">Descuento automático de stock según Hectáreas x Dosis</p>
+                </div>
+                <button onclick="closeModal('modalTrabajo')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x"></i></button>
+            </div>
+            <form id="formTrabajo" onsubmit="saveTrabajo(event)" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="flex items-center justify-between text-xs font-semibold text-slate-600 mb-1"><span>Cliente *</span><button type="button" onclick="nuevoClienteDesde('trabClienteId')" class="text-emerald-600 hover:text-emerald-700 font-bold">+ Nuevo cliente</button></label>
+                        <select id="trabClienteId" onchange="onTrabajoClienteChange()" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Servicio *</label>
+                        <select id="trabTipoServicio" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                            <option value="Aplicación Aérea">Aplicación Aérea</option>
+                            <option value="Aplicación Terrestre">Aplicación Terrestre</option>
+                            <option value="Siembra Aérea">Siembra Aérea</option>
+                            <option value="Fertilización">Fertilización</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha del trabajo (dd/mm/aaaa) *</label>
+                    <input type="text" id="trabFecha" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off" oninput="maskFecha(this)" required class="w-full md:w-48 border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Campo / Establecimiento</label>
+                        <input type="text" id="trabCampo" placeholder="Don Tomas" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Lote(s) / Cultivo</label>
+                        <input type="text" id="trabLote" placeholder="Lote 4 - Soja 1ra" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Hectáreas (Ha) *</label>
+                        <input type="number" step="0.1" id="trabHectareas" oninput="calculateTrabajoTotal()" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Caudal Agua (L/Ha)</label>
+                        <input type="text" id="trabCaudal" placeholder="10 L/ha (Aéreo)" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Precio <span data-mon>ARS</span> por Hectárea *</label>
+                        <input type="number" step="0.01" id="trabPrecioHa" oninput="calculateTrabajoTotal()" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Total Trabajo (<span data-mon>ARS</span>)</label>
+                        <input type="number" id="trabTotalUsd" readonly class="w-full border border-slate-200 bg-slate-100 font-bold text-slate-800 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-200 pt-3">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-xs font-bold uppercase text-slate-700">Productos a Aplicar & Dosis por Ha</label>
+                        <button type="button" onclick="addInsumoRowToTrabajo()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded border font-semibold">+ Agregar Insumo</button>
+                    </div>
+                    <div id="insumosTrabajoContainer" class="space-y-2"></div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4 border-t">
+                    <button type="button" onclick="closeModal('modalTrabajo')" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-sm font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold">Registrar & Restar Stock</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL EMITIR FACTURA -->
+    <div id="modalFactura" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="font-bold text-lg text-slate-800">Emitir Comprobante / Factura</h3>
+                <button onclick="closeModal('modalFactura')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x"></i></button>
+            </div>
+            <form id="formFactura" onsubmit="saveFactura(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Cliente *</label>
+                    <select id="facClienteId" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"></select>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo Comprobante *</label>
+                        <select id="facTipo" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                            <option value="Factura A">Factura A</option>
+                            <option value="Factura B">Factura B</option>
+                            <option value="Factura C">Factura C</option>
+                            <option value="Remito">Remito de Servicio</option>
+                            <option value="Presupuesto">Presupuesto</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Número Comprobante</label>
+                        <input type="text" id="facNumero" placeholder="0001-00001234" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Importe <span data-mon>ARS</span> *</label>
+                        <input type="number" step="0.01" id="facImporte" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Estado de Pago Inicial *</label>
+                        <select id="facEstado" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                            <option value="Pendiente">Pendiente (Debe)</option>
+                            <option value="Pagado">Pagado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4 border-t">
+                    <button type="button" onclick="closeModal('modalFactura')" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-sm font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-slate-900 hover:bg-black text-white rounded-lg text-sm font-semibold">Generar Factura</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL REGISTRAR COBRO -->
+    <div id="modalPago" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="font-bold text-lg text-slate-800">Registrar Cobro / Pago Recibido</h3>
+                <button onclick="closeModal('modalPago')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x"></i></button>
+            </div>
+            <form id="formPago" onsubmit="savePago(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Cliente *</label>
+                    <select id="pagoClienteId" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"></select>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Monto Pagado (<span data-mon>ARS</span>) *</label>
+                        <input type="number" step="0.01" id="pagoMonto" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-emerald-700">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Método de Pago *</label>
+                        <select id="pagoMetodo" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                            <option value="Transferencia bancaria">Transferencia Bancaria</option>
+                            <option value="Cheque a fecha">Cheque a Fecha</option>
+                            <option value="Canje de granos">Canje de Granos</option>
+                            <option value="Efectivo USD">Efectivo USD</option>
+                            <option value="Mercado Pago">Mercado Pago</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Observaciones / Ref. Comprobante</label>
+                    <input type="text" id="pagoNotas" placeholder="Transf. Galicia N° 987452" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                </div>
+                <div class="flex justify-end space-x-3 pt-4 border-t">
+                    <button type="button" onclick="closeModal('modalPago')" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-sm font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold">Acreditar Pago</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL REGISTRAR LLAMADA -->
+    <div id="modalLlamada" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="font-bold text-lg text-slate-800">Registrar Comunicación o Nota</h3>
+                <button onclick="closeModal('modalLlamada')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x"></i></button>
+            </div>
+            <form id="formLlamada" onsubmit="saveLlamada(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Cliente *</label>
+                    <select id="llaClienteId" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"></select>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo Comunicación *</label>
+                        <select id="llaTipo" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                            <option value="Llamada Saliente">Llamada Saliente</option>
+                            <option value="Llamada Entrante">Llamada Entrante</option>
+                            <option value="Mensaje WhatsApp">Mensaje WhatsApp</option>
+                            <option value="Visita de Campo">Visita de Campo</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Motivo / Asunto</label>
+                        <input type="text" id="llaAsunto" placeholder="Reclamo de pago / Cotización" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Detalle de la Conversación</label>
+                    <textarea id="llaDetalle" rows="3" required placeholder="Conversación mantenida con el cliente..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"></textarea>
+                </div>
+                <div class="flex justify-end space-x-3 pt-4 border-t">
+                    <button type="button" onclick="closeModal('modalLlamada')" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-sm font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold">Guardar Registro</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL EXPORTAR RESUMEN ESTADO DE CUENTA -->
+    <div id="modalExportResumen" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-4xl w-full p-6 shadow-2xl overflow-y-auto max-h-[92vh] flex flex-col">
+            <div class="flex justify-between items-center border-b pb-3 mb-4 print:hidden">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="file-check" class="w-5 h-5 text-emerald-600"></i>
+                    <h3 class="font-bold text-lg text-slate-800">Estado de Cuenta & Trabajos para Cliente</h3>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="exportResumenExcel()" class="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-xs font-bold rounded-lg flex items-center space-x-1 transition">
+                        <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+                        <span>Exportar a Excel</span>
+                    </button>
+                    <button onclick="imprimirResumenPDF()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg flex items-center space-x-1 shadow-sm transition">
+                        <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                        <span>Imprimir / PDF</span>
+                    </button>
+                    <button onclick="closeModal('modalExportResumen')" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x"></i></button>
+                </div>
+            </div>
+
+            <div id="printableArea" class="p-6 bg-white relative overflow-hidden border border-slate-200 rounded-xl">
+                <div id="resumenWatermarkBg" class="absolute inset-0 watermark-bg opacity-10 pointer-events-none z-0"></div>
+
+                <div class="relative z-10 space-y-6">
+                    <div class="flex justify-between items-start border-b-2 border-emerald-600 pb-4">
+                        <div class="flex items-center space-x-3">
+                            <div id="resumenLogoBox" class="w-14 h-14 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-extrabold text-2xl overflow-hidden shadow">
+                                <span id="resumenDefaultLogo"><span data-emp-ini>CA</span></span>
+                                <img id="resumenLogoImg" class="hidden w-full h-full object-cover" alt="Logo">
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-extrabold text-slate-900 tracking-tight"><span data-emp>CRM Agrícola</span></h2>
+                                <p class="text-xs text-emerald-700 font-bold uppercase tracking-wider">Fumigaciones Aéreas, Terrestres & Siembra</p>
+                                <p class="text-[11px] text-slate-500">Servicios Agrícolas de Alta Calidad</p>
+                            </div>
+                        </div>
+                        <div class="text-right text-xs text-slate-600">
+                            <p class="font-extrabold text-slate-900 text-sm">ESTADO DE CUENTA Y TRABAJOS</p>
+                            <p id="resumenFechaEmision" class="font-semibold text-slate-500">Fecha: -</p>
+                            <p class="text-emerald-700 font-bold mt-1">Moneda: <span data-mon>ARS</span></p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200 text-xs">
+                        <div>
+                            <p class="text-slate-400 font-semibold uppercase text-[10px]">Cliente / Razón Social</p>
+                            <p id="resumenCliNombre" class="font-extrabold text-slate-900 text-sm mt-0.5">-</p>
+                            <p id="resumenCliCuit" class="text-slate-600">CUIT: -</p>
+                            <p id="resumenCliIva" class="text-slate-600">Condición IVA: -</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-slate-400 font-semibold uppercase text-[10px]">Contacto Directo / Ubicación</p>
+                            <p id="resumenCliContacto" class="font-bold text-slate-800 text-xs mt-0.5">-</p>
+                            <p id="resumenCliCampos" class="text-slate-600">Establecimientos: -</p>
+                            <p id="resumenCliDir" class="text-slate-500">-</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3 text-center">
+                        <div class="p-3 bg-slate-100 rounded-lg border border-slate-200">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase">Total Aplicaciones</p>
+                            <p id="resumenStatFacturado" class="text-base font-extrabold text-slate-900">$ 0</p>
+                        </div>
+                        <div class="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                            <p class="text-[10px] font-bold text-emerald-700 uppercase">Total Pagado</p>
+                            <p id="resumenStatPagado" class="text-base font-extrabold text-emerald-800">$ 0</p>
+                        </div>
+                        <div class="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                            <p class="text-[10px] font-bold text-amber-800 uppercase">Saldo Total Pendiente</p>
+                            <p id="resumenStatDeuda" class="text-base font-extrabold text-amber-900">$ 0</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <h4 class="font-bold text-xs uppercase text-slate-700 tracking-wider flex items-center justify-between">
+                            <span>Detalle de Trabajos Realizados & Lotes</span>
+                            <span class="text-[10px] text-slate-400 font-normal"><span data-emp>CRM Agrícola</span> Control</span>
+                        </h4>
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-800 text-white font-bold uppercase text-[10px]">
+                                    <th class="p-2.5 rounded-l-md">Fecha</th>
+                                    <th class="p-2.5">Servicio / Lote</th>
+                                    <th class="p-2.5">Insumos Aplicados</th>
+                                    <th class="p-2.5 text-right">Ha</th>
+                                    <th class="p-2.5 text-right"><span data-mon>ARS</span>/Ha</th>
+                                    <th class="p-2.5 text-right">Total <span data-mon>ARS</span></th>
+                                    <th class="p-2.5 text-right rounded-r-md">Saldo Deuda</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resumenTablaBody" class="divide-y divide-slate-200"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="pt-6 border-t border-slate-200 text-[11px] text-slate-500 flex justify-between items-end">
+                        <div class="max-w-md space-y-1">
+                            <p class="font-bold text-slate-700">Observaciones y Condiciones:</p>
+                            <p class="text-slate-500">Este documento es una liquidación resumida de servicios prestados por <span data-emp>CRM Agrícola</span>.</p>
+                        </div>
+                        <div class="text-center w-48 border-t border-slate-400 pt-2 font-semibold text-slate-700">
+                            Firma <span data-emp>CRM Agrícola</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT ENGINE & LOGIC -->
+    <script>
+        let currentPinEntered = "";
+        let isConfiguringNewPin = false;
+
+        // VERIFICACIÓN Y GESTIÓN PRIVADA DE PIN EN LOCALSTORAGE
+        const pinHash = async s => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('ba-crm:' + s)))].map(x => x.toString(16).padStart(2, '0')).join('');
+        function checkInitialPinState() {
+            empresa = ls.get('emp') || ''; applyEmpresa();
+            if (!ls.get('pinh')) {
+                isConfiguringNewPin = true;
+                document.getElementById('pinInstructionTitle').textContent = "CREAR PIN DE ACCESO";
+                document.getElementById('pinSubText').textContent = "Defina su nueva clave de 4 dígitos";
+            } else {
+                isConfiguringNewPin = false;
+                document.getElementById('pinInstructionTitle').textContent = "ACCESO PRIVADO & SEGURO";
+                document.getElementById('pinSubText').textContent = "Ingrese su PIN de 4 dígitos";
+            }
+        }
+
+        function appendPinNum(num) {
+            if (currentPinEntered.length < 4) {
+                currentPinEntered += num;
+                document.getElementById('pinInputDisplay').value = currentPinEntered;
+                document.getElementById('pinErrorMsg').classList.add('hidden');
+            }
+            if (currentPinEntered.length === 4) {
+                submitPinCheck();
+            }
+        }
+
+        function clearPinNum() {
+            currentPinEntered = "";
+            document.getElementById('pinInputDisplay').value = "";
+            document.getElementById('pinErrorMsg').classList.add('hidden');
+        }
+
+        function enterApp() {
+            document.getElementById('pinLockScreen').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('hidden');
+            applyEmpresa(); refreshAllViews();
+        }
+        async function submitPinCheck() {
+            if (currentPinEntered.length !== 4) return;
+            const h = await pinHash(currentPinEntered);
+            if (isConfiguringNewPin) {
+                ls.set('pinh', h);
+                document.getElementById('pinSuccessMsg').classList.remove('hidden');
+                setTimeout(() => { document.getElementById('pinSuccessMsg').classList.add('hidden'); enterApp(); }, 800);
+            } else if (h === ls.get('pinh')) {
+                enterApp();
+            } else {
+                document.getElementById('pinErrorMsg').classList.remove('hidden');
+                clearPinNum();
+            }
+        }
+        let chartServiciosInstance = null;
+        let chartClientesHaInstance = null;
+        let chartFacturacionInstance = null;
+        let chartInsumosInstance = null;
+        let tempImportData = null;
+        let selectedClienteId = null;
+
+        const DEFAULT_DATA = {
+            logo: null,
+            clientes: [],
+            stock: [],
+            trabajos: [],
+            facturas: [],
+            pagos: [],
+            llamadas: []
+        };
+
+        const DATA_VERSION = '2';
+
+        let DB = null, empresa = '', dirty = false;
+        const ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+        function EMP() { return (empresa || '').trim() || 'CRM Agrícola'; }
+        function applyEmpresa() {
+            const ini = EMP().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+            document.querySelectorAll('[data-emp]').forEach(e => e.textContent = EMP());
+            document.querySelectorAll('[data-emp-ini]').forEach(e => e.textContent = ini);
+            document.title = EMP();
+        }
+        let moneda = ls.get('mon') === 'USD' ? 'USD' : 'ARS', tc = parseFloat(ls.get('tc')) || 0;
+        if (moneda === 'USD' && !(tc > 0)) moneda = 'ARS';
+        function MON() { return moneda; }
+        function cv(v) { const n = Number(v) || 0; return moneda === 'USD' ? n / tc : n; }
+        function fm(v) { const t = cv(v).toLocaleString('es-AR', { maximumFractionDigits: 2 }); return (moneda === 'USD' ? 'US$ ' : '$ ') + t; }
+        function toBase(v) { v = Number(v) || 0; return Math.round((moneda === 'USD' ? v * tc : v) * 100) / 100; }
+        function applyMoneda() {
+            document.querySelectorAll('[data-mon]').forEach(e => e.textContent = moneda);
+            const b = document.getElementById('monBtn');
+            if (b) b.textContent = moneda === 'USD' ? 'Moneda: USD (TC ' + tc.toLocaleString('es-AR') + ')' : 'Moneda: pesos (ARS)';
+        }
+        function cambiarMoneda() {
+            const parse = v => parseFloat(String(v).replace(/\./g, '').replace(',', '.'));
+            if (moneda === 'ARS') {
+                const v = prompt('Tipo de cambio: ¿cuántos pesos vale 1 dólar?', tc || '');
+                if (v === null) return;
+                const n = parse(v); if (!(n > 0)) { alert('Ingresá un número mayor a 0.'); return; }
+                moneda = 'USD'; tc = n;
+            } else {
+                const v = prompt('Tipo de cambio actual: ' + tc + '\nEscribí uno nuevo para actualizarlo, o dejalo vacío para volver a pesos.', '');
+                if (v === null) return;
+                if (String(v).trim() === '') moneda = 'ARS';
+                else { const n = parse(v); if (!(n > 0)) { alert('Ingresá un número mayor a 0.'); return; } tc = n; }
+            }
+            ls.set('mon', moneda); ls.set('tc', tc || ''); refreshAllViews();
+        }
+        function setDirty(v) { dirty = v; const b = document.getElementById('dirtyBadge'); if (b) b.classList.toggle('hidden', !v); }
+        function getDb() { if (!DB) DB = JSON.parse(JSON.stringify(DEFAULT_DATA)); return DB; }
+        function saveDb(db) { DB = db; setDirty(true); refreshAllViews(); }
+
+        function handleLogoUpload(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Logo = e.target.result;
+                const db = getDb();
+                db.logo = base64Logo;
+                saveDb(db);
+                updateLogoDisplay(base64Logo);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateLogoDisplay(base64Logo) {
+            const defaultIcon = document.getElementById('defaultLogoIcon');
+            const logoImg = document.getElementById('companyLogoImg');
+            
+            if(base64Logo) {
+                if(defaultIcon) defaultIcon.classList.add('hidden');
+                if(logoImg) {
+                    logoImg.src = base64Logo;
+                    logoImg.classList.remove('hidden');
+                }
+            } else {
+                if(defaultIcon) defaultIcon.classList.remove('hidden');
+                if(logoImg) logoImg.classList.add('hidden');
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-emerald-600', 'text-white');
+                btn.classList.add('text-slate-400', 'hover:bg-slate-800');
+            });
+
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if(activeNav) {
+                activeNav.classList.add('bg-emerald-600', 'text-white');
+                activeNav.classList.remove('text-slate-400');
+            }
+
+            const titles = {
+                'dashboard': 'Dashboard General & Analítica de ' + EMP(),
+                'clientes': 'Cartera 360° de Clientes',
+                'stock': 'Depósito & Stock de Insumos',
+                'trabajos': 'Órdenes de Trabajo de Aplicación',
+                'facturacion': 'Facturación & Control de Cobros',
+                'llamadas': 'Bitácora de Comunicaciones'
+            };
+            document.getElementById('pageTitle').textContent = titles[tabId] || EMP();
+
+            refreshAllViews();
+        }
+
+        function getClienteBalances() {
+            const db = getDb();
+            const balances = {};
+
+            db.clientes.forEach(c => {
+                balances[c.id] = { totalFacturado: 0, totalPagado: 0, saldoDeuda: 0 };
+            });
+
+            db.facturas.forEach(f => {
+                if(balances[f.clienteId]) {
+                    balances[f.clienteId].totalFacturado += parseFloat(f.importe || 0);
+                    if(f.estado === 'Pagado') {
+                        balances[f.clienteId].totalPagado += parseFloat(f.importe || 0);
+                    }
+                }
+            });
+
+            db.pagos.forEach(p => {
+                if(balances[p.clienteId]) {
+                    balances[p.clienteId].totalPagado += parseFloat(p.monto || 0);
+                }
+            });
+
+            Object.keys(balances).forEach(id => {
+                const b = balances[id];
+                b.saldoDeuda = Math.max(0, b.totalFacturado - b.totalPagado);
+            });
+
+            return balances;
+        }
+
+        function calculateAveragePaymentDays(db) {
+            let totalDays = 0;
+            let paidCount = 0;
+
+            db.facturas.forEach(f => {
+                if(f.estado === 'Pagado' && f.fecha && f.fechaPago) {
+                    const d1 = new Date(f.fecha);
+                    const d2 = new Date(f.fechaPago);
+                    const diffDays = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24));
+                    if(!isNaN(diffDays) && diffDays >= 0) {
+                        totalDays += diffDays;
+                        paidCount++;
+                    }
+                }
+            });
+
+            return paidCount > 0 ? Math.round(totalDays / paidCount) : 0;
+        }
+
+        function refreshAllViews() {
+            const db = getDb();
+            applyMoneda();
+            updateLogoDisplay(db.logo);
+            renderDashboard(db);
+            renderClientes(db);
+            renderStockTable(db);
+            renderTrabajosTable(db);
+            renderFacturacionTable(db);
+            renderLlamadas(db);
+            updateSelectOptions(db);
+        }
+
+        function renderDashboard(db) {
+            const balances = getClienteBalances();
+
+            let totalDeudaGlobal = 0;
+            let totalFacturadoGlobal = 0;
+            let totalCobradoGlobal = 0;
+            let tooltipHtml = '';
+
+            Object.keys(balances).forEach(cId => {
+                const cli = db.clientes.find(c => c.id === cId);
+                const saldo = balances[cId].saldoDeuda;
+                totalFacturadoGlobal += balances[cId].totalFacturado;
+                totalCobradoGlobal += balances[cId].totalPagado;
+
+                if(cli && saldo > 0) {
+                    totalDeudaGlobal += saldo;
+                    tooltipHtml += `
+                        <div class="flex justify-between items-center py-1 border-b border-slate-800">
+                            <span class="font-medium text-slate-200">${cli.nombre}</span>
+                            <span class="font-bold text-amber-400">${fm(saldo)}</span>
+                        </div>
+                    `;
+                }
+            });
+
+            document.getElementById('dashTotalDeuda').textContent = `${fm(totalDeudaGlobal)}`;
+            document.getElementById('tooltipDeudaDetalle').innerHTML = tooltipHtml || '<p class="text-slate-400 py-1">Sin deudas pendientes.</p>';
+            document.getElementById('dashTotalFacturado').textContent = `${fm(totalFacturadoGlobal)}`;
+            document.getElementById('dashTotalCobradoSub').textContent = `Cobrado: ${fm(totalCobradoGlobal)}`;
+
+            let totalHa = 0;
+            const haPorServicio = { 'Aplicación Aérea': 0, 'Aplicación Terrestre': 0, 'Siembra Aérea': 0, 'Fertilización': 0 };
+            const haPorCliente = {};
+
+            db.trabajos.forEach(t => {
+                const ha = parseFloat(t.hectareas || 0);
+                totalHa += ha;
+                if(haPorServicio[t.servicio] !== undefined) {
+                    haPorServicio[t.servicio] += ha;
+                } else {
+                    haPorServicio[t.servicio] = ha;
+                }
+                haPorCliente[t.clienteId] = (haPorCliente[t.clienteId] || 0) + ha;
+            });
+
+            document.getElementById('dashTotalHaMes').textContent = `${totalHa.toLocaleString()} Ha`;
+            
+            const topServicio = Object.keys(haPorServicio).reduce((a, b) => haPorServicio[a] > haPorServicio[b] ? a : b, 'Aplicación Aérea');
+            document.getElementById('dashServicioPrincipal').textContent = `Top: ${topServicio}`;
+
+            const avgDays = calculateAveragePaymentDays(db);
+            document.getElementById('dashDiasPagoProm').textContent = `${avgDays} días`;
+
+            renderCharts(db, haPorServicio, haPorCliente);
+
+            let stockSummaryHtml = '';
+            db.stock.slice(0, 5).forEach(s => {
+                const cli = db.clientes.find(c => c.id === s.clienteId);
+                const isLow = s.cantidad < 100;
+                stockSummaryHtml += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-2 font-medium text-slate-700 truncate max-w-[120px]">${cli?.nombre || '-'}</td>
+                        <td class="p-2 font-semibold text-slate-900">${s.producto}</td>
+                        <td class="p-2"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600">${s.categoria}</span></td>
+                        <td class="p-2 text-right font-bold ${isLow ? 'text-red-600' : 'text-slate-800'}">${s.cantidad} ${s.unidad}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('dashTableStock').innerHTML = stockSummaryHtml;
+            lucide.createIcons();
+        }
+
+        function renderCharts(db, haPorServicio, haPorCliente) {
+            const ctxServicios = document.getElementById('chartServicios')?.getContext('2d');
+            if(ctxServicios) {
+                if(chartServiciosInstance) chartServiciosInstance.destroy();
+                chartServiciosInstance = new Chart(ctxServicios, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(haPorServicio),
+                        datasets: [{
+                            data: Object.values(haPorServicio),
+                            backgroundColor: ['#059669', '#2563eb', '#d97706', '#7c3aed'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11 } } }
+                        }
+                    }
+                });
+            }
+
+            const ctxClientes = document.getElementById('chartClientesHa')?.getContext('2d');
+            if(ctxClientes) {
+                const clientNames = Object.keys(haPorCliente).map(cId => db.clientes.find(c => c.id === cId)?.nombre.substring(0, 15) || 'Cliente');
+                const clientHaValues = Object.values(haPorCliente);
+
+                if(chartClientesHaInstance) chartClientesHaInstance.destroy();
+                chartClientesHaInstance = new Chart(ctxClientes, {
+                    type: 'bar',
+                    data: {
+                        labels: clientNames.length ? clientNames : ['Sin datos'],
+                        datasets: [{
+                            label: 'Hectáreas Aplicadas',
+                            data: clientHaValues.length ? clientHaValues : [0],
+                            backgroundColor: '#10b981',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            }
+
+            const ctxEvolucion = document.getElementById('chartFacturacionEvolucion')?.getContext('2d');
+            if(ctxEvolucion) {
+                if(chartFacturacionInstance) chartFacturacionInstance.destroy();
+                chartFacturacionInstance = new Chart(ctxEvolucion, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [
+                            {
+                                label: 'Facturado (' + MON() + ')',
+                                data: [],
+                                borderColor: '#0f172a',
+                                backgroundColor: 'rgba(15, 23, 42, 0.05)',
+                                fill: true,
+                                tension: 0.3
+                            },
+                            {
+                                label: 'Cobrado (' + MON() + ')',
+                                data: [],
+                                borderColor: '#059669',
+                                backgroundColor: 'transparent',
+                                borderDash: [4, 4],
+                                tension: 0.3
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'top', labels: { font: { family: 'Inter', size: 11 } } } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            }
+
+            const ctxInsumos = document.getElementById('chartInsumosCat')?.getContext('2d');
+            if(ctxInsumos) {
+                const catCounts = { Herbicida: 0, Fungicida: 0, Insecticida: 0, Fertilizante: 0, Otros: 0 };
+                db.stock.forEach(s => {
+                    if(catCounts[s.categoria] !== undefined) catCounts[s.categoria] += s.cantidad;
+                    else catCounts.Otros += s.cantidad;
+                });
+
+                if(chartInsumosInstance) chartInsumosInstance.destroy();
+                chartInsumosInstance = new Chart(ctxInsumos, {
+                    type: 'pie',
+                    data: {
+                        labels: Object.keys(catCounts),
+                        datasets: [{
+                            data: Object.values(catCounts),
+                            backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#64748b']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 10 } } } }
+                    }
+                });
+            }
+        }
+
+        function renderClientes(db) {
+            const search = document.getElementById('searchClienteInput')?.value.toLowerCase() || '';
+            const balances = getClienteBalances();
+
+            const filtered = db.clientes.filter(c => 
+                c.nombre.toLowerCase().includes(search) || 
+                c.cuit.includes(search) ||
+                (c.campos && c.campos.some(cp => cp.toLowerCase().includes(search)))
+            );
+
+            let listHtml = '';
+            filtered.forEach(c => {
+                const bal = balances[c.id] || { saldoDeuda: 0 };
+                const selectedClass = selectedClienteId === c.id ? 'border-emerald-600 bg-emerald-50/50 shadow-sm' : 'border-slate-200 hover:border-slate-300';
+                
+                listHtml += `
+                    <div onclick="selectCliente360('${c.id}')" class="p-4 rounded-xl border ${selectedClass} cursor-pointer transition space-y-2">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-slate-900 text-sm leading-snug">${c.nombre}</h4>
+                            <span class="text-[11px] font-semibold px-2 py-0.5 rounded ${bal.saldoDeuda > 0 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
+                                ${bal.saldoDeuda > 0 ? `Debe ${fm(bal.saldoDeuda)}` : 'Al Día'}
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500">CUIT: ${c.cuit} • ${c.iva}</p>
+                    </div>
+                `;
+            });
+
+            document.getElementById('clientesList').innerHTML = listHtml || '<p class="text-xs text-slate-400 p-4">Sin resultados.</p>';
+
+            if(selectedClienteId) {
+                renderClientePerfil360(db, selectedClienteId);
+            }
+            lucide.createIcons();
+        }
+
+        function selectCliente360(clienteId) {
+            selectedClienteId = clienteId;
+            renderClientes(getDb());
+        }
+
+        function renderClientePerfil360(db, clienteId) {
+            const cliente = db.clientes.find(c => c.id === clienteId);
+            if(!cliente) return;
+
+            const balances = getClienteBalances()[clienteId] || { totalFacturado: 0, totalPagado: 0, saldoDeuda: 0 };
+            const stockCliente = db.stock.filter(s => s.clienteId === clienteId);
+            const trabajosCliente = db.trabajos.filter(t => t.clienteId === clienteId);
+
+            const waPhone = (cliente.tel || '').replace(/[^0-9]/g, '');
+            const waMsg = encodeURIComponent(`Hola ${cliente.contactoNombre || cliente.nombre}, te contactamos desde ${EMP()}.`);
+            const watermarkStyle = db.logo ? `background-image: url('${db.logo}'); opacity: 0.95;` : '';
+
+            const profileHtml = `
+                <div class="space-y-6">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-200 pb-4 gap-4">
+                        <div>
+                            <div class="flex items-center space-x-3">
+                                <h2 class="text-2xl font-extrabold text-slate-900">${cliente.nombre}</h2>
+                                <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">${cliente.iva}</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1">CUIT: ${cliente.cuit} | Dirección: ${cliente.direccion || 'No especificada'}</p>
+                        </div>
+                        
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button onclick="abrirModalExportResumen('${cliente.id}')" class="inline-flex items-center space-x-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition border border-emerald-300">
+                                <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-700"></i>
+                                <span>Exportar Resumen Deuda</span>
+                            </button>
+
+                            ${waPhone ? `
+                                <a href="https://wa.me/${waPhone}?text=${waMsg}" target="_blank" class="inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition">
+                                    <i data-lucide="message-square" class="w-4 h-4"></i>
+                                    <span>WhatsApp Directo</span>
+                                </a>
+                            ` : ''}
+                            ${cliente.email ? `
+                                <a href="mailto:${cliente.email}" class="inline-flex items-center space-x-2 bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition">
+                                    <i data-lucide="mail" class="w-4 h-4"></i>
+                                    <span>Correo</span>
+                                </a>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                            <p class="text-xs font-semibold text-slate-500">Total Facturado</p>
+                            <h4 class="text-xl font-bold text-slate-800 mt-1">${fm(balances.totalFacturado)}</h4>
+                        </div>
+                        <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+                            <p class="text-xs font-semibold text-emerald-700">Total Cobrado</p>
+                            <h4 class="text-xl font-bold text-emerald-800 mt-1">${fm(balances.totalPagado)}</h4>
+                        </div>
+                        <div class="p-4 ${balances.saldoDeuda > 0 ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'} rounded-xl border">
+                            <p class="text-xs font-semibold ${balances.saldoDeuda > 0 ? 'text-amber-700' : 'text-emerald-700'}">Saldo Pendiente (Deuda)</p>
+                            <h4 class="text-xl font-bold ${balances.saldoDeuda > 0 ? 'text-amber-900' : 'text-emerald-900'} mt-1">${fm(balances.saldoDeuda)}</h4>
+                        </div>
+                    </div>
+
+                    <div class="relative border border-slate-200 rounded-xl p-5 bg-white watermark-bg" style="${watermarkStyle}">
+                        <div class="absolute inset-0 bg-white/90 rounded-xl z-0"></div>
+
+                        <div class="relative z-10 space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <h4 class="font-bold text-xs uppercase tracking-wider text-slate-500 mb-2 flex items-center">
+                                        <i data-lucide="map" class="w-4 h-4 mr-1 text-emerald-600"></i> Campos & Establecimientos
+                                    </h4>
+                                    <div class="flex flex-wrap gap-1.5">
+                                        ${(cliente.campos || []).map(cp => `<span class="px-2.5 py-1 bg-slate-100 rounded-lg text-xs font-medium text-slate-700 border border-slate-200">${cp}</span>`).join('')}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-xs uppercase tracking-wider text-slate-500 mb-2 flex items-center">
+                                        <i data-lucide="user" class="w-4 h-4 mr-1 text-emerald-600"></i> Contacto Directo
+                                    </h4>
+                                    <p class="text-sm font-semibold text-slate-800">${cliente.contactoNombre || 'Sin nombre'}</p>
+                                    <p class="text-xs text-slate-600">Tel: ${cliente.tel || '-'} | Email: ${cliente.email || '-'}</p>
+                                </div>
+                            </div>
+
+                            <div class="border border-slate-200 rounded-xl overflow-hidden bg-white/80">
+                                <div class="p-3 bg-slate-100/80 font-bold text-xs text-slate-700 flex justify-between items-center">
+                                    <span>INSUMOS EN DEPÓSITO (DISPONIBLE CLIENTE)</span>
+                                </div>
+                                <table class="w-full text-xs text-left">
+                                    <thead class="bg-slate-50 text-slate-500 border-b">
+                                        <tr>
+                                            <th class="p-2.5">Producto</th>
+                                            <th class="p-2.5">Categoría</th>
+                                            <th class="p-2.5 text-right">Cantidad Stock</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        ${stockCliente.length > 0 ? stockCliente.map(s => `
+                                            <tr>
+                                                <td class="p-2.5 font-bold text-slate-800">${s.producto}</td>
+                                                <td class="p-2.5"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 font-semibold text-slate-600">${s.categoria}</span></td>
+                                                <td class="p-2.5 text-right font-extrabold text-emerald-700">${s.cantidad} ${s.unidad}</td>
+                                            </tr>
+                                        `).join('') : '<tr><td colspan="3" class="p-3 text-center text-slate-400">No posee insumos en depósito.</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="border border-slate-200 rounded-xl p-4 bg-white/80">
+                                <h4 class="font-bold text-xs text-slate-700 uppercase mb-3 flex items-center justify-between">
+                                    <span class="flex items-center">
+                                        <i data-lucide="plane" class="w-4 h-4 mr-1.5 text-emerald-600"></i>
+                                        Trabajos Realizados y Cuentas por Cobrar (${EMP()})
+                                    </span>
+                                    <button onclick="abrirModalExportResumen('${cliente.id}')" class="text-[11px] text-emerald-600 hover:text-emerald-800 font-bold flex items-center">
+                                        <i data-lucide="external-link" class="w-3 h-3 mr-1"></i> Generar Resumen
+                                    </button>
+                                </h4>
+                                <div class="space-y-2 max-h-56 overflow-y-auto custom-scrollbar">
+                                    ${trabajosCliente.length > 0 ? trabajosCliente.map(t => `
+                                        <div class="p-3 rounded-lg bg-slate-50 border border-slate-200 text-xs flex justify-between items-center">
+                                            <div>
+                                                <p class="font-bold text-slate-800">${t.servicio} - ${t.campo} (${t.lote || 'Sin lote'})</p>
+                                                <p class="text-slate-500">${t.hectareas} Ha (${t.caudal || '-'}) • ${t.fecha}</p>
+                                                <p class="text-[11px] text-emerald-700 mt-0.5">${t.insumosUsados || ''}</p>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="font-extrabold text-slate-900 text-sm">${fm(t.totalUsd)}</span>
+                                                <span class="block text-[10px] font-semibold text-slate-500">${fm(t.precioHa)}/Ha</span>
+                                            </div>
+                                        </div>
+                                    `).join('') : '<p class="text-xs text-slate-400">Sin aplicaciones registradas.</p>'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('clientePerfil360').innerHTML = profileHtml;
+            lucide.createIcons();
+        }
+
+        let exportClienteCurrentId = null;
+
+        function abrirModalExportResumen(clienteId) {
+            exportClienteCurrentId = clienteId;
+            const db = getDb();
+            const cliente = db.clientes.find(c => c.id === clienteId);
+            if(!cliente) return;
+
+            const balances = getClienteBalances()[clienteId] || { totalFacturado: 0, totalPagado: 0, saldoDeuda: 0 };
+            const trabajos = db.trabajos.filter(t => t.clienteId === clienteId);
+            const facturas = db.facturas.filter(f => f.clienteId === clienteId);
+
+            const watermarkEl = document.getElementById('resumenWatermarkBg');
+            const defaultLogoIcon = document.getElementById('resumenDefaultLogo');
+            const logoImg = document.getElementById('resumenLogoImg');
+
+            if(db.logo) {
+                watermarkEl.style.backgroundImage = `url('${db.logo}')`;
+                if(defaultLogoIcon) defaultLogoIcon.classList.add('hidden');
+                if(logoImg) {
+                    logoImg.src = db.logo;
+                    logoImg.classList.remove('hidden');
+                }
+            } else {
+                watermarkEl.style.backgroundImage = 'none';
+                if(defaultLogoIcon) defaultLogoIcon.classList.remove('hidden');
+                if(logoImg) logoImg.classList.add('hidden');
+            }
+
+            document.getElementById('resumenFechaEmision').textContent = `Fecha: ${new Date().toLocaleDateString('es-AR')}`;
+            document.getElementById('resumenCliNombre').textContent = cliente.nombre;
+            document.getElementById('resumenCliCuit').textContent = `CUIT: ${cliente.cuit}`;
+            document.getElementById('resumenCliIva').textContent = `Condición IVA: ${cliente.iva}`;
+            document.getElementById('resumenCliContacto').textContent = `Contacto: ${cliente.contactoNombre || '-'}`;
+            document.getElementById('resumenCliCampos').textContent = `Campos: ${(cliente.campos || []).join(', ') || 'General'}`;
+            document.getElementById('resumenCliDir').textContent = cliente.direccion || '-';
+
+            document.getElementById('resumenStatFacturado').textContent = `${fm(balances.totalFacturado)}`;
+            document.getElementById('resumenStatPagado').textContent = `${fm(balances.totalPagado)}`;
+            document.getElementById('resumenStatDeuda').textContent = `${fm(balances.saldoDeuda)}`;
+
+            let tableRowsHtml = '';
+            if(trabajos.length > 0) {
+                trabajos.forEach(t => {
+                    const facRel = facturas.find(f => f.importe === t.totalUsd && f.fecha === t.fecha);
+                    const estado = facRel ? facRel.estado : 'Pendiente';
+                    const saldoLinea = estado === 'Pagado' ? 0 : t.totalUsd;
+
+                    tableRowsHtml += `
+                        <tr class="hover:bg-slate-50 border-b border-slate-100">
+                            <td class="p-2 font-medium text-slate-700">${t.fecha}</td>
+                            <td class="p-2 font-bold text-slate-800">${t.servicio}<br><span class="text-[10px] text-slate-500 font-normal">${t.campo} (${t.lote || 'Sin Lote'})</span></td>
+                            <td class="p-2 text-slate-600 text-[10px] max-w-xs">${t.insumosUsados || 'Insumo del cliente'}</td>
+                            <td class="p-2 text-right font-semibold text-slate-800">${t.hectareas} Ha</td>
+                            <td class="p-2 text-right font-medium text-slate-600">${fm(t.precioHa)}</td>
+                            <td class="p-2 text-right font-extrabold text-slate-900">${fm(t.totalUsd)}</td>
+                            <td class="p-2 text-right font-extrabold ${saldoLinea > 0 ? 'text-amber-800 bg-amber-50/50' : 'text-emerald-700'}">${fm(saldoLinea)}</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tableRowsHtml = `<tr><td colspan="7" class="p-4 text-center text-slate-400">Sin trabajos registrados para este cliente.</td></tr>`;
+            }
+
+            document.getElementById('resumenTablaBody').innerHTML = tableRowsHtml;
+            openModal('modalExportResumen');
+            lucide.createIcons();
+        }
+
+        function exportResumenExcel() {
+            if(!exportClienteCurrentId) return;
+            const db = getDb();
+            const cliente = db.clientes.find(c => c.id === exportClienteCurrentId);
+            const trabajos = db.trabajos.filter(t => t.clienteId === exportClienteCurrentId);
+            const balances = getClienteBalances()[exportClienteCurrentId] || { totalFacturado: 0, totalPagado: 0, saldoDeuda: 0 };
+
+            const data = [
+                [EMP() + " - RESUMEN DE ESTADO DE CUENTA"],
+                ["Cliente:", cliente.nombre, "CUIT:", cliente.cuit],
+                ["Fecha de Emisión:", new Date().toLocaleDateString('es-AR'), "Moneda:", MON()],
+                [],
+                ["Total Aplicaciones (" + MON() + "):", cv(balances.totalFacturado), "Total Pagado:", cv(balances.totalPagado), "Saldo Deuda:", cv(balances.saldoDeuda)],
+                [],
+                ["Fecha", "Servicio", "Establecimiento", "Lote", "Insumos Aplicados", "Hectareas", MON() + "/Ha", "Total " + MON()]
+            ];
+
+            trabajos.forEach(t => {
+                data.push([
+                    t.fecha,
+                    t.servicio,
+                    t.campo,
+                    t.lote || '',
+                    t.insumosUsados || '',
+                    t.hectareas,
+                    cv(t.precioHa),
+                    cv(t.totalUsd)
+                ]);
+            });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            XLSX.utils.book_append_sheet(wb, ws, "Estado_Cuenta");
+            
+            const fileName = `Resumen_Deuda_${cliente.nombre.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+        }
+
+        function imprimirResumenPDF() {
+            const src = document.getElementById('printableArea'); if (!src) return;
+            const old = document.getElementById('printRoot'); if (old) old.remove();
+            const root = document.createElement('div'); root.id = 'printRoot'; root.innerHTML = src.innerHTML;
+            document.body.appendChild(root);
+            document.body.classList.add('printing');
+            const done = () => { document.body.classList.remove('printing'); window.removeEventListener('afterprint', done); };
+            window.addEventListener('afterprint', done);
+            setTimeout(() => window.print(), 150);
+        }
+
+        function renderStockTable(db) {
+            const search = document.getElementById('searchStockInput')?.value.toLowerCase() || '';
+
+            const filtered = db.stock.filter(s => {
+                const cli = db.clientes.find(c => c.id === s.clienteId);
+                return s.producto.toLowerCase().includes(search) || (cli && cli.nombre.toLowerCase().includes(search));
+            });
+
+            let html = '';
+            filtered.forEach(s => {
+                const cli = db.clientes.find(c => c.id === s.clienteId);
+                const isLow = s.cantidad < 50;
+                html += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3.5 font-semibold text-slate-800">${cli?.nombre || 'Cliente'}</td>
+                        <td class="p-3.5 font-bold text-slate-900">${s.producto}</td>
+                        <td class="p-3.5"><span class="px-2 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">${s.categoria}</span></td>
+                        <td class="p-3.5 text-right font-extrabold text-base ${isLow ? 'text-red-600' : 'text-emerald-700'}">${s.cantidad}</td>
+                        <td class="p-3.5 font-medium text-slate-600">${s.unidad}</td>
+                        <td class="p-3.5 text-center">
+                            <button onclick="deleteStockItem('${s.id}')" class="text-red-500 hover:text-red-700 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('stockTableBody').innerHTML = html || '<tr><td colspan="6" class="p-4 text-center text-slate-400">Depósito vacío.</td></tr>';
+            lucide.createIcons();
+        }
+
+        function renderTrabajosTable(db) {
+            let html = '';
+            db.trabajos.slice().reverse().forEach(t => {
+                const cli = db.clientes.find(c => c.id === t.clienteId);
+                html += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3.5 text-slate-500 font-medium">${t.fecha}</td>
+                        <td class="p-3.5 font-semibold text-slate-900">${cli?.nombre || '-'}</td>
+                        <td class="p-3.5"><span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">${t.servicio}</span></td>
+                        <td class="p-3.5 text-slate-700 font-medium">${t.campo} (${t.lote})</td>
+                        <td class="p-3.5 text-right font-bold text-slate-900">${t.hectareas} Ha</td>
+                        <td class="p-3.5 text-right text-slate-600">${t.caudal || '-'}</td>
+                        <td class="p-3.5 text-right font-medium text-slate-700">${fm(t.precioHa)}</td>
+                        <td class="p-3.5 text-right font-extrabold text-slate-900">${fm(t.totalUsd)}</td>
+                        <td class="p-3.5 text-center text-xs text-slate-500 truncate max-w-xs">${t.insumosUsados || 'Ninguno'}</td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('trabajosTableBody').innerHTML = html || '<tr><td colspan="9" class="p-4 text-center text-slate-400">Sin trabajos registrados.</td></tr>';
+            lucide.createIcons();
+        }
+
+        function renderFacturacionTable(db) {
+            let html = '';
+            db.facturas.slice().reverse().forEach(f => {
+                const cli = db.clientes.find(c => c.id === f.clienteId);
+                const isPaid = f.estado === 'Pagado';
+                const waPhone = (cli?.tel || '').replace(/[^0-9]/g, '');
+                const waMsg = encodeURIComponent(`Estimado ${cli?.contactoNombre || cli?.nombre}, le enviamos de ${EMP()} la factura ${f.tipo} ${f.numero} por ${fm(f.importe)}.`);
+
+                html += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3.5 text-slate-500 font-medium">${f.fecha}</td>
+                        <td class="p-3.5 font-bold text-slate-900">${f.tipo} ${f.numero || ''}</td>
+                        <td class="p-3.5 font-semibold text-slate-800">${cli?.nombre || '-'}</td>
+                        <td class="p-3.5 text-xs text-slate-500">${cli?.cuit || '-'}</td>
+                        <td class="p-3.5 text-right font-extrabold text-slate-900">${fm(f.importe)}</td>
+                        <td class="p-3.5 text-center">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-bold ${isPaid ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                                ${f.estado}
+                            </span>
+                        </td>
+                        <td class="p-3.5 text-xs text-slate-600">${f.metodo || '-'}</td>
+                        <td class="p-3.5 text-center space-x-2">
+                            ${waPhone ? `
+                                <a href="https://wa.me/${waPhone}?text=${waMsg}" target="_blank" title="Enviar por WhatsApp" class="inline-block text-emerald-600 hover:text-emerald-800 p-1">
+                                    <i data-lucide="share-2" class="w-4 h-4"></i>
+                                </a>
+                            ` : ''}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('facturacionTableBody').innerHTML = html || '<tr><td colspan="8" class="p-4 text-center text-slate-400">Sin facturas emitidas.</td></tr>';
+            lucide.createIcons();
+        }
+
+        function renderLlamadas(db) {
+            let html = '';
+            db.llamadas.slice().reverse().forEach(l => {
+                const cli = db.clientes.find(c => c.id === l.clienteId);
+                html += `
+                    <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                        <div class="space-y-1">
+                            <div class="flex items-center space-x-2">
+                                <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-200 text-slate-700">${l.tipo}</span>
+                                <span class="text-xs text-slate-400 font-medium">${l.fecha}</span>
+                            </div>
+                            <h4 class="font-bold text-slate-900 text-sm">${cli?.nombre || 'Cliente'} - <span class="text-emerald-700">${l.asunto}</span></h4>
+                            <p class="text-xs text-slate-600">${l.detalle}</p>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('llamadasContainer').innerHTML = html || '<p class="text-xs text-slate-400">Sin registros.</p>';
+            lucide.createIcons();
+        }
+
+        function updateSelectOptions(db) {
+            const clienteSelects = ['stockClienteId', 'trabClienteId', 'facClienteId', 'pagoClienteId', 'llaClienteId'];
+            clienteSelects.forEach(selectId => {
+                const el = document.getElementById(selectId);
+                if(el) {
+                    el.innerHTML = db.clientes.map(c => `<option value="${c.id}">${c.nombre} (CUIT ${c.cuit})</option>`).join('');
+                }
+            });
+
+            onTrabajoClienteChange();
+        }
+
+        function onTrabajoClienteChange() {
+            const clienteId = document.getElementById('trabClienteId')?.value;
+            const container = document.getElementById('insumosTrabajoContainer');
+            if(!container) return;
+            container.innerHTML = '';
+            addInsumoRowToTrabajo();
+        }
+
+        function addInsumoRowToTrabajo() {
+            const db = getDb();
+            const clienteId = document.getElementById('trabClienteId')?.value;
+            const container = document.getElementById('insumosTrabajoContainer');
+            if(!container) return;
+
+            const stockDisponible = db.stock.filter(s => s.clienteId === clienteId);
+            const rowId = 'insumo_row_' + Date.now() + Math.random().toString(36).substr(2, 4);
+
+            let optionsHtml = stockDisponible.map(s => `<option value="${s.id}">${s.producto} (Disp: ${s.cantidad} ${s.unidad})</option>`).join('');
+            if(!optionsHtml) {
+                optionsHtml = '<option value="">El cliente no tiene insumos en depósito</option>';
+            }
+
+            const rowHtml = `
+                <div id="${rowId}" class="flex items-center space-x-2">
+                    <select class="trabInsumoId border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs flex-1">
+                        ${optionsHtml}
+                    </select>
+                    <input type="number" step="0.01" placeholder="Dosis / Ha" class="trabDosisHa border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs w-28">
+                    <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-red-500 hover:text-red-700 p-1">
+                        <i data-lucide="x-circle" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `;
+
+            container.insertAdjacentHTML('beforeend', rowHtml);
+            lucide.createIcons();
+        }
+
+        function calculateTrabajoTotal() {
+            const ha = parseFloat(document.getElementById('trabHectareas')?.value || 0);
+            const px = parseFloat(document.getElementById('trabPrecioHa')?.value || 0);
+            document.getElementById('trabTotalUsd').value = (ha * px).toFixed(2);
+        }
+
+        function downloadExcelTemplate() {
+            const wb = XLSX.utils.book_new();
+
+            const clientesData = [
+                ["Nombre", "CUIT", "CondicionIVA", "Contacto", "Telefono", "Email", "Campos"],
+                ["Agrícola El Sol S.A.", "30-99887766-5", "Responsable Inscripto", "Pedro Gómez", "+5492477112233", "pedro@elsol.com", "Campo Norte, Lote 5"],
+                ["Estancia Los Pinos", "20-11223344-9", "Monotributo", "Mariana Pinos", "+5492477445566", "mpinos@gmail.com", "Los Pinos Lote A"]
+            ];
+            const wsClientes = XLSX.utils.aoa_to_sheet(clientesData);
+            XLSX.utils.book_append_sheet(wb, wsClientes, "Clientes");
+
+            const stockData = [
+                ["ClienteCUIT", "Producto", "Categoria", "Cantidad", "Unidad"],
+                ["30-99887766-5", "Glifosato 48%", "Herbicida", 500, "Litros"],
+                ["20-11223344-9", "Urea Granulada", "Fertilizante", 2000, "Kilos"]
+            ];
+            const wsStock = XLSX.utils.aoa_to_sheet(stockData);
+            XLSX.utils.book_append_sheet(wb, wsStock, "Stock");
+
+            const trabajosData = [
+                ["ClienteCUIT", "Servicio", "Campo", "Lote", "Hectareas", "Caudal", "PrecioHa", "Fecha"],
+                ["30-99887766-5", "Aplicación Aérea", "Campo Norte", "Lote 5", 250, "10 L/ha", 9.5, "2026-11-05"]
+            ];
+            const wsTrabajos = XLSX.utils.aoa_to_sheet(trabajosData);
+            XLSX.utils.book_append_sheet(wb, wsTrabajos, "Trabajos");
+
+            XLSX.writeFile(wb, "Plantilla_BA_System.xlsx");
+        }
+
+  // FUNCIÓN AUXILIAR PARA PARSEAR FECHAS DE EXCEL (NÚMEROS SERIALES O TEXTO)
+        function formatExcelDate(val) {
+            if (!val) return new Date().toISOString().split('T')[0];
+            if (val instanceof Date) {
+                return val.toISOString().split('T')[0];
+            }
+            if (typeof val === 'number' || (!isNaN(val) && String(val).trim().length > 3 && String(val).trim().length < 6)) {
+                const num = parseFloat(val);
+                const jsDate = new Date(Math.round((num - 25569) * 86400 * 1000));
+                if (!isNaN(jsDate.getTime())) {
+                    return jsDate.toISOString().split('T')[0];
+                }
+            }
+            const str = String(val).trim();
+            if (str.includes('/')) {
+                const parts = str.split('/');
+                if (parts.length === 3 && parts[2].length === 4) {
+                    return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                }
+            }
+            return str;
+        }
+
+        // LECTURA ADAPTADA A HOJAS "Facturación" Y "Aplicaciones"
+        function handleExcelImport(event) {
+            const file = event.target ? event.target.files[0] : (event.files ? event.files[0] : null);
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+
+                    tempImportData = { clientesMap: {}, facturas: [], trabajos: [], stock: [] };
+
+                    // 1. BUSCAR Y PARSEAR HOJA DE FACTURACIÓN
+                    const facturacionSheetName = workbook.SheetNames.find(name => 
+                        name.trim().toLowerCase().includes('factura')
+                    );
+
+                    if (facturacionSheetName) {
+                        const rawSheet = XLSX.utils.sheet_to_json(workbook.Sheets[facturacionSheetName], { header: 1 });
+                        
+                        // Encontrar fila de encabezados que contenga 'Cliente'
+                        let headerIdx = rawSheet.findIndex(row => row && row.some(cell => String(cell).toLowerCase().includes('cliente')));
+                        if (headerIdx === -1) headerIdx = 0;
+
+                        const headers = rawSheet[headerIdx].map(h => String(h || '').trim().toLowerCase());
+                        const idxCli = headers.findIndex(h => h.includes('cliente'));
+                        const idxCuit = headers.findIndex(h => h.includes('cuit'));
+                        const idxNro = headers.findIndex(h => h.includes('factura') || h.includes('n°') || h.includes('n de'));
+                        const idxFechaFac = headers.findIndex(h => h.includes('fecha de facturación') || h.includes('fecha'));
+                        const idxMonto = headers.findIndex(h => h.includes('importe') || h.includes('monto'));
+                        const idxEstado = headers.findIndex(h => h.includes('estado'));
+                        const idxFechaPago = headers.findIndex(h => h.includes('fecha de pago'));
+                        const idxMetodo = headers.findIndex(h => h.includes('metodo') || h.includes('médoto'));
+
+                        for (let i = headerIdx + 1; i < rawSheet.length; i++) {
+                            const r = rawSheet[i];
+                            if (!r || !r[idxCli]) continue;
+
+                            const cliNombre = String(r[idxCli]).trim();
+                            const cuit = idxCuit !== -1 && r[idxCuit] ? String(r[idxCuit]).trim() : '00-00000000-0';
+                            
+                            if (!tempImportData.clientesMap[cliNombre]) {
+                                tempImportData.clientesMap[cliNombre] = {
+                                    id: 'c_' + Date.now() + Math.random().toString(36).substr(2, 4),
+                                    nombre: cliNombre,
+                                    cuit: cuit,
+                                    iva: 'Responsable Inscripto',
+                                    direccion: '',
+                                    contactoNombre: '',
+                                    tel: '',
+                                    email: '',
+                                    campos: [],
+                                    fechaAlta: new Date().toISOString().split('T')[0]
+                                };
+                            }
+
+                            const montoVal = idxMonto !== -1 && r[idxMonto] ? parseFloat(r[idxMonto]) : 0;
+                            if (montoVal > 0) {
+                                const estadoStr = idxEstado !== -1 && r[idxEstado] ? String(r[idxEstado]).trim().toLowerCase() : '';
+                                const isPagado = estadoStr.includes('pago') || estadoStr.includes('pagado');
+
+                                tempImportData.facturas.push({
+                                    clienteNombre: cliNombre,
+                                    tipo: 'Factura A',
+                                    numero: idxNro !== -1 && r[idxNro] ? String(r[idxNro]) : '0001-' + Math.floor(100000 + Math.random() * 900000),
+                                    importe: montoVal,
+                                    estado: isPagado ? 'Pagado' : 'Pendiente',
+                                    fecha: idxFechaFac !== -1 ? formatExcelDate(r[idxFechaFac]) : new Date().toISOString().split('T')[0],
+                                    fechaPago: isPagado && idxFechaPago !== -1 && r[idxFechaPago] ? formatExcelDate(r[idxFechaPago]) : null,
+                                    metodo: idxMetodo !== -1 && r[idxMetodo] ? String(r[idxMetodo]).trim() : '-'
+                                });
+                            }
+                        }
+                    }
+
+                    // 2. BUSCAR Y PARSEAR HOJA DE APLICACIONES
+                    const aplicacionesSheetName = workbook.SheetNames.find(name => 
+                        name.trim().toLowerCase().includes('aplicacion') || name.trim().toLowerCase().includes('aplicación')
+                    );
+
+                    if (aplicacionesSheetName) {
+                        const rawSheet = XLSX.utils.sheet_to_json(workbook.Sheets[aplicacionesSheetName], { header: 1 });
+                        
+                        let headerIdx = rawSheet.findIndex(row => row && row.some(cell => String(cell).toLowerCase().includes('fecha')));
+                        if (headerIdx === -1) headerIdx = 0;
+
+                        const headers = rawSheet[headerIdx].map(h => String(h || '').trim().toLowerCase());
+                        const idxFecha = headers.findIndex(h => h === 'fecha');
+                        const idxCli = headers.findIndex(h => h.includes('cliente'));
+                        const idxLote = headers.findIndex(h => h.includes('lote'));
+                        const idxServicio = headers.findIndex(h => h.includes('aplicación') || h.includes('aplicacion'));
+                        const idxHas = headers.findIndex(h => h.includes('has') || h.includes('hectareas'));
+                        const idxCat = headers.findIndex(h => h === 'aplicación' || h === 'categoria' || h === 'categoría');
+                        const idxProd = headers.findIndex(h => h.includes('producto'));
+                        const idxPrecio = headers.findIndex(h => h.includes('precio'));
+                        const idxMonto = headers.findIndex(h => h.includes('monto') || h.includes('total'));
+
+                        for (let i = headerIdx + 1; i < rawSheet.length; i++) {
+                            const r = rawSheet[i];
+                            if (!r) continue;
+
+                            const cliNombre = idxCli !== -1 && r[idxCli] ? String(r[idxCli]).trim() : '';
+                            const hasVal = idxHas !== -1 && r[idxHas] ? parseFloat(r[idxHas]) : 0;
+                            const montoVal = idxMonto !== -1 && r[idxMonto] ? parseFloat(r[idxMonto]) : 0;
+
+                            if (cliNombre && (hasVal > 0 || montoVal > 0)) {
+                                if (!tempImportData.clientesMap[cliNombre]) {
+                                    tempImportData.clientesMap[cliNombre] = {
+                                        id: 'c_' + Date.now() + Math.random().toString(36).substr(2, 4),
+                                        nombre: cliNombre,
+                                        cuit: '00-00000000-0',
+                                        iva: 'Responsable Inscripto',
+                                        direccion: '',
+                                        contactoNombre: '',
+                                        tel: '',
+                                        email: '',
+                                        campos: [],
+                                        fechaAlta: new Date().toISOString().split('T')[0]
+                                    };
+                                }
+
+                                const servicioRaw = idxServicio !== -1 && r[idxServicio] ? String(r[idxServicio]).trim() : 'Aplicación Terrestre';
+                                const servicioFormatted = servicioRaw.toLowerCase().includes('aérea') || servicioRaw.toLowerCase().includes('aerea') ? 'Aplicación Aérea' :
+                                                          (servicioRaw.toLowerCase().includes('siembra') ? 'Siembra Aérea' :
+                                                          (servicioRaw.toLowerCase().includes('fertiliz') ? 'Fertilización' : 'Aplicación Terrestre'));
+
+                                const productoStr = idxProd !== -1 && r[idxProd] ? String(r[idxProd]).trim() : '';
+                                const catStr = idxCat !== -1 && r[idxCat] ? String(r[idxCat]).trim() : '';
+
+                                const precioVal = idxPrecio !== -1 && r[idxPrecio] ? parseFloat(r[idxPrecio]) : (hasVal > 0 ? (montoVal / hasVal) : 0);
+
+                                tempImportData.trabajos.push({
+                                    clienteNombre: cliNombre,
+                                    servicio: servicioFormatted,
+                                    campo: idxLote !== -1 && r[idxLote] ? String(r[idxLote]).trim() : 'General',
+                                    lote: idxLote !== -1 && r[idxLote] ? String(r[idxLote]).trim() : '',
+                                    hectareas: hasVal,
+                                    caudal: '-',
+                                    precioHa: parseFloat(precioVal.toFixed(2)),
+                                    totalUsd: parseFloat((montoVal || (hasVal * precioVal)).toFixed(2)),
+                                    fecha: idxFecha !== -1 ? formatExcelDate(r[idxFecha]) : new Date().toISOString().split('T')[0],
+                                    insumosUsados: productoStr ? `${productoStr} (${catStr || 'Insumo'})` : (catStr || 'Insumo del cliente')
+                                });
+                            }
+                        }
+                    }
+
+                    // 3. RENDERIZAR VISTA PREVIA Y HABILITAR CONFIRMACIÓN
+                    const previewHead = document.getElementById('excelPreviewHead');
+                    const previewBody = document.getElementById('excelPreviewBody');
+                    const previewContainer = document.getElementById('excelPreviewContainer');
+                    const btnConfirm = document.getElementById('btnConfirmImport');
+
+                    const clientesList = Object.values(tempImportData.clientesMap);
+                    const totalItems = clientesList.length + tempImportData.facturas.length + tempImportData.trabajos.length;
+
+                    if (totalItems > 0) {
+                        previewHead.innerHTML = `<tr><th class="p-2">Tipo</th><th class="p-2">Cliente / Servicio</th><th class="p-2">Detalle</th><th class="p-2 text-right">Monto (ARS)</th></tr>`;
+                        
+                        let previewRows = '';
+                        clientesList.forEach(c => {
+                            previewRows += `<tr><td class="p-2 font-bold text-emerald-700">Cliente</td><td class="p-2 font-semibold">${c.nombre}</td><td class="p-2">CUIT: ${c.cuit}</td><td class="p-2 text-right">-</td></tr>`;
+                        });
+                        tempImportData.trabajos.forEach(t => {
+                            previewRows += `<tr><td class="p-2 font-bold text-blue-700">Aplicación</td><td class="p-2 font-semibold">${t.clienteNombre} (${t.servicio})</td><td class="p-2">${t.hectareas} Ha - ${t.insumosUsados}</td><td class="p-2 text-right font-bold">$${t.totalUsd}</td></tr>`;
+                        });
+                        tempImportData.facturas.forEach(f => {
+                            previewRows += `<tr><td class="p-2 font-bold text-amber-700">Factura</td><td class="p-2 font-semibold">${f.clienteNombre}</td><td class="p-2">N° ${f.numero} (${f.estado})</td><td class="p-2 text-right font-bold">$${f.importe}</td></tr>`;
+                        });
+
+                        previewBody.innerHTML = previewRows;
+                        previewContainer.classList.remove('hidden');
+                        btnConfirm.disabled = false;
+                        btnConfirm.className = "px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold shadow-sm cursor-pointer";
+                    } else {
+                        alert('No se encontraron registros válidos en las hojas Facturación o Aplicaciones.');
+                    }
+                } catch (err) {
+                    alert('Error al procesar el archivo Excel. Asegúrate de seleccionar un archivo .xlsx válido.');
+                }
+
+                if (event.target) event.target.value = '';
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        // VINCULACIÓN E IMPORTACIÓN DE CLIENTES, FACTURAS Y TRABAJOS A LA BD LOCAL
+        function confirmExcelImport() {
+            if (!tempImportData) return;
+
+            const db = getDb();
+            const clienteIdMap = {};
+
+            // 1. Agregar o vincular Clientes
+            Object.values(tempImportData.clientesMap).forEach(cImport => {
+                let cliExistente = db.clientes.find(c => 
+                    c.nombre.toLowerCase().trim() === cImport.nombre.toLowerCase().trim() ||
+                    (cImport.cuit !== '00-00000000-0' && c.cuit === cImport.cuit)
+                );
+
+                if (!cliExistente) {
+                    db.clientes.push(cImport);
+                    clienteIdMap[cImport.nombre] = cImport.id;
+                } else {
+                    if (cImport.cuit !== '00-00000000-0') {
+                        cliExistente.cuit = cImport.cuit;
+                    }
+                    clienteIdMap[cImport.nombre] = cliExistente.id;
+                }
+            });
+
+            // 2. Guardar Trabajos de Aplicación
+            if (tempImportData.trabajos && tempImportData.trabajos.length > 0) {
+                tempImportData.trabajos.forEach(tr => {
+                    const cId = clienteIdMap[tr.clienteNombre] || db.clientes[0]?.id;
+                    if (cId) {
+                        db.trabajos.push({
+                            id: 't_' + Date.now() + Math.random().toString(36).substr(2, 4),
+                            clienteId: cId,
+                            servicio: tr.servicio,
+                            campo: tr.campo,
+                            lote: tr.lote,
+                            hectareas: tr.hectareas,
+                            caudal: tr.caudal,
+                            precioHa: tr.precioHa,
+                            totalUsd: tr.totalUsd,
+                            fecha: tr.fecha,
+                            insumosUsados: tr.insumosUsados
+                        });
+                    }
+                });
+            }
+
+            // 3. Guardar Facturas y Cobros registrados
+            if (tempImportData.facturas && tempImportData.facturas.length > 0) {
+                tempImportData.facturas.forEach(fc => {
+                    const cId = clienteIdMap[fc.clienteNombre] || db.clientes[0]?.id;
+                    if (cId) {
+                        db.facturas.push({
+                            id: 'f_' + Date.now() + Math.random().toString(36).substr(2, 4),
+                            clienteId: cId,
+                            tipo: fc.tipo,
+                            numero: fc.numero,
+                            importe: fc.importe,
+                            estado: fc.estado,
+                            fecha: fc.fecha,
+                            fechaPago: fc.fechaPago,
+                            metodo: fc.metodo
+                        });
+
+                        if (fc.estado === 'Pagado') {
+                            db.pagos.push({
+                                id: 'p_' + Date.now() + Math.random().toString(36).substr(2, 4),
+                                clienteId: cId,
+                                monto: fc.importe,
+                                metodo: fc.metodo,
+                                notas: `Pago de factura N° ${fc.numero}`,
+                                fecha: fc.fechaPago || fc.fecha
+                            });
+                        }
+                    }
+                });
+            }
+
+            saveDb(db);
+            closeModal('modalImportExcel');
+            alert('¡Datos de Facturación y Aplicaciones cargados e integrados con éxito!');
+        }
+
+        let pendingCliSel = null;
+        function nuevoClienteDesde(selId) { pendingCliSel = selId; document.getElementById('modalCliente').style.zIndex = 60; openModal('modalCliente'); }
+        function saveCliente(e) {
+            e.preventDefault();
+            const db = getDb();
+            const nuevo = {
+                id: 'c_' + Date.now(),
+                nombre: document.getElementById('cliNombre').value,
+                cuit: document.getElementById('cliCuit').value,
+                iva: document.getElementById('cliIva').value,
+                direccion: document.getElementById('cliDireccion').value,
+                contactoNombre: document.getElementById('cliContactoNombre').value,
+                tel: document.getElementById('cliTel').value,
+                email: document.getElementById('cliEmail').value,
+                campos: document.getElementById('cliCampos').value.split(',').map(s => s.trim()).filter(Boolean),
+                fechaAlta: new Date().toISOString().split('T')[0]
+            };
+            db.clientes.push(nuevo);
+            saveDb(db);
+            if (pendingCliSel) { const el = document.getElementById(pendingCliSel); if (el) { el.value = nuevo.id; if (pendingCliSel === 'trabClienteId') onTrabajoClienteChange(); } }
+            closeModal('modalCliente');
+            document.getElementById('formCliente').reset();
+        }
+
+        function saveStockItem(e) {
+            e.preventDefault();
+            const db = getDb();
+            const nuevo = {
+                id: 's_' + Date.now(),
+                clienteId: document.getElementById('stockClienteId').value,
+                producto: document.getElementById('stockNombre').value,
+                categoria: document.getElementById('stockCategoria').value,
+                cantidad: parseFloat(document.getElementById('stockCantidad').value || 0),
+                unidad: document.getElementById('stockUnidad').value
+            };
+            db.stock.push(nuevo);
+            saveDb(db);
+            closeModal('modalStock');
+            document.getElementById('formStock').reset();
+        }
+
+        function deleteStockItem(stockId) {
+            const db = getDb();
+            db.stock = db.stock.filter(s => s.id !== stockId);
+            saveDb(db);
+        }
+
+        function hoyAR() { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`; }
+        function maskFecha(el) {
+            const d = el.value.replace(/\D/g, '').slice(0, 8);
+            el.value = d.length > 4 ? `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}` : d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d;
+        }
+        function fechaAIso(t) {
+            const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec((t || '').trim()); if (!m) return null;
+            const dd = +m[1], mm = +m[2], yy = +m[3], f = new Date(yy, mm - 1, dd);
+            if (yy < 2000 || yy > 2100 || f.getFullYear() !== yy || f.getMonth() !== mm - 1 || f.getDate() !== dd) return null;
+            return `${m[3]}-${m[2]}-${m[1]}`;
+        }
+        function saveTrabajo(e) {
+            e.preventDefault();
+            const fechaTrab = fechaAIso(document.getElementById('trabFecha').value);
+            if (!fechaTrab) { alert('La fecha del trabajo no es válida. Escribila como dd/mm/aaaa, por ejemplo 05/11/2026.'); return; }
+            const db = getDb();
+
+            const clienteId = document.getElementById('trabClienteId').value;
+            const hectareas = parseFloat(document.getElementById('trabHectareas').value || 0);
+            const precioHa = toBase(parseFloat(document.getElementById('trabPrecioHa').value || 0));
+            const totalUsd = hectareas * precioHa;
+
+            const insumoRows = document.querySelectorAll('#insumosTrabajoContainer > div');
+            const insumosUsadosText = [];
+
+            insumoRows.forEach(row => {
+                const stockId = row.querySelector('.trabInsumoId')?.value;
+                const dosisHa = parseFloat(row.querySelector('.trabDosisHa')?.value || 0);
+
+                if(stockId && dosisHa > 0) {
+                    const stockObj = db.stock.find(s => s.id === stockId);
+                    if(stockObj) {
+                        const totalDescuento = dosisHa * hectareas;
+                        stockObj.cantidad = Math.max(0, stockObj.cantidad - totalDescuento);
+                        insumosUsadosText.push(`${stockObj.producto}: ${totalDescuento.toFixed(1)} ${stockObj.unidad}`);
+                    }
+                }
+            });
+
+            const nuevoTrabajo = {
+                id: 't_' + Date.now(),
+                clienteId: clienteId,
+                servicio: document.getElementById('trabTipoServicio').value,
+                campo: document.getElementById('trabCampo').value,
+                lote: document.getElementById('trabLote').value,
+                hectareas: hectareas,
+                caudal: document.getElementById('trabCaudal').value,
+                precioHa: precioHa,
+                totalUsd: totalUsd,
+                fecha: fechaTrab,
+                insumosUsados: insumosUsadosText.join(', ') || 'Sin insumos declarados'
+            };
+
+            db.trabajos.push(nuevoTrabajo);
+
+            db.facturas.push({
+                id: 'f_' + Date.now(),
+                clienteId: clienteId,
+                tipo: 'Factura A',
+                numero: '0001-' + Math.floor(100000 + Math.random() * 900000),
+                importe: totalUsd,
+                estado: 'Pendiente',
+                fecha: fechaTrab,
+                fechaPago: null,
+                metodo: '-'
+            });
+
+            saveDb(db);
+            closeModal('modalTrabajo');
+            document.getElementById('formTrabajo').reset();
+        }
+
+        function saveFactura(e) {
+            e.preventDefault();
+            const db = getDb();
+            const nueva = {
+                id: 'f_' + Date.now(),
+                clienteId: document.getElementById('facClienteId').value,
+                tipo: document.getElementById('facTipo').value,
+                numero: document.getElementById('facNumero').value || ('0001-' + Math.floor(100000 + Math.random() * 900000)),
+                importe: toBase(parseFloat(document.getElementById('facImporte').value || 0)),
+                estado: document.getElementById('facEstado').value,
+                fecha: new Date().toISOString().split('T')[0],
+                fechaPago: document.getElementById('facEstado').value === 'Pagado' ? new Date().toISOString().split('T')[0] : null,
+                metodo: '-'
+            };
+            db.facturas.push(nueva);
+            saveDb(db);
+            closeModal('modalFactura');
+            document.getElementById('formFactura').reset();
+        }
+
+        function savePago(e) {
+            e.preventDefault();
+            const db = getDb();
+            const nuevoPago = {
+                id: 'p_' + Date.now(),
+                clienteId: document.getElementById('pagoClienteId').value,
+                monto: toBase(parseFloat(document.getElementById('pagoMonto').value || 0)),
+                metodo: document.getElementById('pagoMetodo').value,
+                notas: document.getElementById('pagoNotas').value,
+                fecha: new Date().toISOString().split('T')[0]
+            };
+
+            let montoRestante = nuevoPago.monto;
+            db.facturas.filter(f => f.clienteId === nuevoPago.clienteId && f.estado === 'Pendiente').forEach(f => {
+                if(montoRestante >= f.importe) {
+                    f.estado = 'Pagado';
+                    f.fechaPago = nuevoPago.fecha;
+                    f.metodo = nuevoPago.metodo;
+                    montoRestante -= f.importe;
+                }
+            });
+
+            db.pagos.push(nuevoPago);
+            saveDb(db);
+            closeModal('modalPago');
+            document.getElementById('formPago').reset();
+        }
+
+        function saveLlamada(e) {
+            e.preventDefault();
+            const db = getDb();
+            const nueva = {
+                id: 'l_' + Date.now(),
+                clienteId: document.getElementById('llaClienteId').value,
+                tipo: document.getElementById('llaTipo').value,
+                asunto: document.getElementById('llaAsunto').value,
+                detalle: document.getElementById('llaDetalle').value,
+                fecha: new Date().toLocaleString()
+            };
+            db.llamadas.push(nueva);
+            saveDb(db);
+            closeModal('modalLlamada');
+            document.getElementById('formLlamada').reset();
+        }
+
+        function editEmpresa() {
+            const v = prompt('Nombre de la empresa', empresa || '');
+            if (v !== null) { empresa = v.trim(); ls.set('emp', empresa); applyEmpresa(); setDirty(true); refreshAllViews(); }
+        }
+        async function guardarJSON() {
+            const d = new Date(), p = n => String(n).padStart(2, '0');
+            const name = `crm-agricola_${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.json`;
+            const file = new File([JSON.stringify({ version: 2, guardado: d.toISOString(), empresa: empresa || '', moneda, tipoCambio: tc || null, ...getDb() }, null, 1)], name, { type: 'application/json' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try { await navigator.share({ files: [file] }); setDirty(false); alert('Si elegiste "Guardar en Archivos", el respaldo quedó guardado.'); return; }
+                catch (e) { if (e.name === 'AbortError') return; }
+            }
+            const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; a.click();
+            setDirty(false);
+        }
+        document.getElementById('jsonFile').addEventListener('change', e => {
+            const f = e.target.files[0]; if (!f) return;
+            if (dirty && !confirm('Tienes cambios sin guardar. ¿Cargar igual y descartarlos?')) { e.target.value = ''; return; }
+            const r = new FileReader();
+            r.onload = () => {
+                try {
+                    const o = JSON.parse(r.result); if (typeof o !== 'object' || !o) throw 0;
+                    const nd = JSON.parse(JSON.stringify(DEFAULT_DATA));
+                    Object.keys(nd).forEach(k => { if (o[k] !== undefined && o[k] !== null) nd[k] = o[k]; });
+                    DB = nd;
+                    if (o.moneda === 'USD' && parseFloat(o.tipoCambio) > 0) { moneda = 'USD'; tc = parseFloat(o.tipoCambio); } else if (o.moneda === 'ARS') { moneda = 'ARS'; if (parseFloat(o.tipoCambio) > 0) tc = parseFloat(o.tipoCambio); }
+                    ls.set('mon', moneda); ls.set('tc', tc || '');
+                    if (typeof o.empresa === 'string') { empresa = o.empresa; ls.set('emp', empresa); }
+                    setDirty(false); applyEmpresa(); refreshAllViews(); alert('Datos cargados: ' + f.name);
+                } catch (x) { alert('Ese archivo no es válido.'); }
+            };
+            r.readAsText(f); e.target.value = '';
+        });
+        window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+
+        function openModal(id) { document.getElementById(id)?.classList.remove('hidden'); if (id === 'modalTrabajo') { const f = document.getElementById('trabFecha'); if (f && !f.value) f.value = hoyAR(); } }
+        function closeModal(id) { document.getElementById(id)?.classList.add('hidden'); if (id === 'modalCliente') { pendingCliSel = null; document.getElementById('modalCliente').style.zIndex = ''; } }
+
+        window.onload = function() {
+            checkInitialPinState();
+            lucide.createIcons();
+        };
+    </script>
+</body>
+</html>
